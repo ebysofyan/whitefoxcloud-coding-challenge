@@ -48,3 +48,24 @@ def test_get_book_exists(service):
 def test_get_book_not_found(service):
     with pytest.raises(BookNotFoundError):
         service.get_book("/books/nonexistent")
+
+
+def test_service_uses_dynamodb_endpoint(monkeypatch):
+    """When `dynamodb_endpoint` is set, BookService passes it to boto3."""
+    monkeypatch.setattr(settings, "dynamodb_endpoint", "http://localhost:9999")
+    captured: dict[str, object] = {}
+
+    def fake_resource(name, **kwargs):
+        captured["name"] = name
+        captured.update(kwargs)
+
+        class _Resource:
+            def Table(self, _):
+                return None
+
+        return _Resource()
+
+    monkeypatch.setattr("src.services.book_service.boto3.resource", fake_resource)
+    BookService()
+    assert captured["endpoint_url"] == "http://localhost:9999"
+    assert captured["region_name"] == settings.aws_region
