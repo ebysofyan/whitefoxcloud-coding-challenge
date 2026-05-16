@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     books_table_name: str = "dev-books"
     aws_region: str = "us-east-1"
     environment: str = "dev"
+    dynamodb_endpoint: str | None = None
     model_config = {"env_prefix": "", "env_file": ".env", "extra": "ignore"}
 
 
