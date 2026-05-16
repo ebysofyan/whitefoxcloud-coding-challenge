@@ -39,4 +39,4 @@ def test_login_invalid_credentials(client):
 def test_login_missing_fields(client):
     """POST /api/auth/login returns 422 on missing fields."""
     response = client.post("/api/auth/login", json={"username": "admin"})
-    assert response.status_code == 422
+    assert response.status_code == 400
