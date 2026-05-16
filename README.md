@@ -21,19 +21,62 @@ RESTful API built with FastAPI for book management, backed by AWS DynamoDB and d
 
 ## Getting Started
 
-```bash
-# 1. Install dependencies and pre-commit hooks
-make setup
+### 1. Install dependencies
 
-# 2. Start DynamoDB Local
+```bash
+make setup        # Installs Python deps (via uv) and pre-commit hooks
+```
+
+### 2. Configure DynamoDB — pick **one** option
+
+#### Option A: DynamoDB Local (Docker — no AWS account needed)
+
+```bash
+# Start DynamoDB Local container (port 18749)
 make db
 
-# 3. Create .env (only needed once)
+# Create .env pointing to the local instance
 echo "DYNAMODB_ENDPOINT=http://localhost:18749" > .env
 
-# 4. Start dev server (http://localhost:9876)
-make dev
+# Create the books table in DynamoDB Local
+make db-init
 ```
+
+> DynamoDB Local runs in-memory — data is wiped on container restart.
+> No real AWS credentials are required; the init script supplies dummy values automatically.
+
+#### Option B: AWS DynamoDB (cloud)
+
+Requires the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) configured with valid credentials (`aws configure`).
+
+```bash
+# .env — do NOT set DYNAMODB_ENDPOINT (app uses the real AWS endpoint)
+echo "AWS_REGION=ap-southeast-1" > .env
+
+# Create the books table in AWS
+make db-init
+```
+
+The table name defaults to `dev-books`. Override it with `BOOKS_TABLE_NAME`:
+
+```bash
+echo "BOOKS_TABLE_NAME=my-books" >> .env
+```
+
+### 3. Start the dev server
+
+```bash
+make dev          # http://localhost:9876
+```
+
+### Environment variables reference
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DYNAMODB_ENDPOINT` | *(unset — uses AWS)* | Set to `http://localhost:18749` for DynamoDB Local |
+| `BOOKS_TABLE_NAME` | `dev-books` | DynamoDB table name |
+| `AWS_REGION` | `ap-southeast-1` | AWS region for DynamoDB |
+| `ENVIRONMENT` | `dev` | Runtime environment label |
 
 ## Running Tests
 
