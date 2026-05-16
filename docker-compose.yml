@@ -1,0 +1,14 @@
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "18749:8000"
+    # In-memory storage avoids sqlite4java permission errors on the mounted
+    # volume (container runs as non-root). Data is wiped on container restart,
+    # which is fine for local development; persistence is not a requirement.
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000 >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
