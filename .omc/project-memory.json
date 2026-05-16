@@ -1,0 +1,306 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1778940199533,
+  "projectRoot": "/Users/eby/Workspace/git/ebysofyan/whitefoxcloud-coding-challenge",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Python",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "pyproject.toml"
+        ]
+      },
+      {
+        "name": "C/C++",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Makefile"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "fastapi",
+        "version": null,
+        "category": "backend"
+      },
+      {
+        "name": "pytest",
+        "version": null,
+        "category": "testing"
+      }
+    ],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "make build",
+    "testCommand": "uv run pytest --cov=src --cov-fail-under=90 2>&1 | tail -15",
+    "lintCommand": "ruff check",
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": "snake_case",
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts",
+      "src",
+      "static",
+      "tests"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1778940199510,
+      "keyFiles": [
+        "Python Coding Challenge - Latest version.md"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 1,
+      "lastAccessed": 1778940199510,
+      "keyFiles": [
+        "init_db.py"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 6,
+      "lastAccessed": 1778940199513,
+      "keyFiles": [
+        "__init__.py",
+        "auth.py",
+        "config.py",
+        "exceptions.py",
+        "main.py"
+      ]
+    },
+    "static": {
+      "path": "static",
+      "purpose": "Static files",
+      "fileCount": 1,
+      "lastAccessed": 1778940199515,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 6,
+      "lastAccessed": 1778940199515,
+      "keyFiles": [
+        "__init__.py",
+        "conftest.py",
+        "test_auth.py",
+        "test_config.py",
+        "test_exceptions.py"
+      ]
+    },
+    "src/routes": {
+      "path": "src/routes",
+      "purpose": "Route handlers",
+      "fileCount": 3,
+      "lastAccessed": 1778940199516,
+      "keyFiles": [
+        "__init__.py",
+        "auth.py",
+        "books.py"
+      ]
+    },
+    "src/services": {
+      "path": "src/services",
+      "purpose": "Business logic services",
+      "fileCount": 2,
+      "lastAccessed": 1778940199517,
+      "keyFiles": [
+        "__init__.py",
+        "book_service.py"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "tests/test_routes/test_books.py",
+      "accessCount": 5,
+      "lastAccessed": 1778942965609,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_auth.py",
+      "accessCount": 4,
+      "lastAccessed": 1778942663707,
+      "type": "file"
+    },
+    {
+      "path": "Makefile",
+      "accessCount": 3,
+      "lastAccessed": 1778943789071,
+      "type": "file"
+    },
+    {
+      "path": "scripts/init_db.py",
+      "accessCount": 3,
+      "lastAccessed": 1778944257165,
+      "type": "file"
+    },
+    {
+      "path": "docker-compose.yml",
+      "accessCount": 3,
+      "lastAccessed": 1778944486169,
+      "type": "file"
+    },
+    {
+      "path": "src/main.py",
+      "accessCount": 3,
+      "lastAccessed": 1778944803770,
+      "type": "file"
+    },
+    {
+      "path": "tests/conftest.py",
+      "accessCount": 2,
+      "lastAccessed": 1778942563239,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_config.py",
+      "accessCount": 2,
+      "lastAccessed": 1778942588255,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_services/test_book_service.py",
+      "accessCount": 2,
+      "lastAccessed": 1778942672686,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_main.py",
+      "accessCount": 2,
+      "lastAccessed": 1778942697741,
+      "type": "file"
+    },
+    {
+      "path": "serverless.yml",
+      "accessCount": 2,
+      "lastAccessed": 1778942881729,
+      "type": "file"
+    },
+    {
+      "path": "docs/Python Coding Challenge - Latest version.md",
+      "accessCount": 2,
+      "lastAccessed": 1778944703496,
+      "type": "file"
+    },
+    {
+      "path": "src/routes/books.py",
+      "accessCount": 2,
+      "lastAccessed": 1778944803695,
+      "type": "file"
+    },
+    {
+      "path": "src/models.py",
+      "accessCount": 2,
+      "lastAccessed": 1778944803752,
+      "type": "file"
+    },
+    {
+      "path": "src/auth.py",
+      "accessCount": 2,
+      "lastAccessed": 1778944803804,
+      "type": "file"
+    },
+    {
+      "path": "src/services/book_service.py",
+      "accessCount": 2,
+      "lastAccessed": 1778944803865,
+      "type": "file"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-15-fastapi-books-api-design.md",
+      "accessCount": 1,
+      "lastAccessed": 1778940274812,
+      "type": "file"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-05-15-fastapi-books-api-implementation.md",
+      "accessCount": 1,
+      "lastAccessed": 1778940275382,
+      "type": "file"
+    },
+    {
+      "path": "pyproject.toml",
+      "accessCount": 1,
+      "lastAccessed": 1778940290291,
+      "type": "file"
+    },
+    {
+      "path": "static/index.html",
+      "accessCount": 1,
+      "lastAccessed": 1778940290378,
+      "type": "file"
+    },
+    {
+      "path": "src/config.py",
+      "accessCount": 1,
+      "lastAccessed": 1778940290546,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_models.py",
+      "accessCount": 1,
+      "lastAccessed": 1778940306723,
+      "type": "file"
+    },
+    {
+      "path": "src/routes/auth.py",
+      "accessCount": 1,
+      "lastAccessed": 1778940306983,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_routes/test_auth.py",
+      "accessCount": 1,
+      "lastAccessed": 1778940307003,
+      "type": "file"
+    },
+    {
+      "path": "src/exceptions.py",
+      "accessCount": 1,
+      "lastAccessed": 1778940307114,
+      "type": "file"
+    },
+    {
+      "path": "tests/integration/test_books.py",
+      "accessCount": 1,
+      "lastAccessed": 1778940307173,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_exceptions.py",
+      "accessCount": 1,
+      "lastAccessed": 1778940307224,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
