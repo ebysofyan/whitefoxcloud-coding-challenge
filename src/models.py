@@ -11,7 +11,7 @@ class LoginResponse(BaseModel):
 
 
 class BookCreate(BaseModel):
-    id: str
+    id: str | None = None
     author: str
     name: str
     note: str
