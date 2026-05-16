@@ -1,9 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(min_length=1)
+    password: str = Field(min_length=1)
 
 
 class LoginResponse(BaseModel):
@@ -12,10 +12,10 @@ class LoginResponse(BaseModel):
 
 class BookCreate(BaseModel):
     id: str | None = None
-    author: str
-    name: str
-    note: str
-    serial: str
+    author: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    note: str = Field(min_length=1)
+    serial: str = Field(min_length=1)
 
 
 class BookResponse(BaseModel):

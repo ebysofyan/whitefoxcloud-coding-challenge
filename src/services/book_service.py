@@ -1,11 +1,13 @@
 import base64
 import json
 from typing import Any
+from uuid import uuid4
 
 import boto3
 
 from src.config import settings
 from src.exceptions import BookNotFoundError, InvalidCursorError
+from src.models import BookCreate, BookListResponse, BookResponse
 
 
 def _encode_cursor(key: dict[str, Any] | None) -> str | None:
@@ -38,27 +40,30 @@ class BookService:
         self.dynamodb = boto3.resource("dynamodb", **kwargs)
         self.table = self.dynamodb.Table(settings.books_table_name)
 
-    def create_book(self, book_data: dict[str, Any]) -> dict[str, Any]:
-        self.table.put_item(Item=book_data)
-        return book_data
+    def create_book(self, book: BookCreate) -> BookResponse:
+        data = book.model_dump()
+        if data.get("id") is None:
+            data["id"] = str(uuid4())
+        self.table.put_item(Item=data)
+        return BookResponse(**data)
 
-    def get_book(self, book_id: str) -> dict[str, Any]:
+    def get_book(self, book_id: str) -> BookResponse:
         response = self.table.get_item(Key={"id": book_id})
         item = response.get("Item")
 
         if item is None:
             raise BookNotFoundError(book_id)
 
-        return item
+        return BookResponse(**item)
 
     def list_books(
         self,
         limit: int = 10,
         cursor: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> BookListResponse:
         """Paginate books via DynamoDB LastEvaluatedKey.
 
-        Returns a dict matching BookListResponse:
+        Returns a BookListResponse with:
           - items: page of books
           - next_cursor: LEK of this page (None at end of data)
           - prev_cursor: echo of incoming cursor (one-step back)
@@ -73,14 +78,14 @@ class BookService:
         response = self.table.scan(**scan_kwargs)
         next_cursor = _encode_cursor(response.get("LastEvaluatedKey"))
 
-        return {
-            "items": response.get("Items", []),
-            "next_cursor": next_cursor,
-            "prev_cursor": cursor,
-            "has_next": next_cursor is not None,
-            "has_prev": cursor is not None,
-            "total": self.table.item_count,
-        }
+        return BookListResponse(
+            items=[BookResponse(**item) for item in response.get("Items", [])],
+            next_cursor=next_cursor,
+            prev_cursor=cursor,
+            has_next=next_cursor is not None,
+            has_prev=cursor is not None,
+            total=self.table.item_count,
+        )
 
     def delete_book(self, book_id: str) -> None:
         self.table.delete_item(Key={"id": book_id})

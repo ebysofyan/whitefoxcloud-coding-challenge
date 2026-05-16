@@ -30,6 +30,12 @@ def test_static_index_html_served(client: TestClient):
     assert "text/html" in response.headers.get("content-type", "")
 
 
+def test_health_check(client: TestClient):
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
 def test_not_authenticated_error_handler():
     """Wire a throwaway route that raises NotAuthenticatedError to cover its handler."""
 

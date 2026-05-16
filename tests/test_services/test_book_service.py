@@ -4,6 +4,7 @@ from moto import mock_aws
 
 from src.config import settings
 from src.exceptions import BookNotFoundError, InvalidCursorError
+from src.models import BookCreate
 from src.services.book_service import (
     BookService,
     _decode_cursor,
@@ -25,28 +26,40 @@ def service():
 
 
 def test_create_book(service):
-    book_data = {
-        "id": "/books/id1",
-        "author": "/authors/id1",
-        "name": "Test Book",
-        "note": "A test",
-        "serial": "T001",
-    }
-    result = service.create_book(book_data)
-    assert result["id"] == "/books/id1"
+    book = BookCreate(
+        id="/books/id1",
+        author="/authors/id1",
+        name="Test Book",
+        note="A test",
+        serial="T001",
+    )
+    result = service.create_book(book)
+    assert result.id == "/books/id1"
+
+
+def test_create_book_auto_id(service):
+    book = BookCreate(
+        author="/authors/id1",
+        name="Auto ID Book",
+        note="A test",
+        serial="T001",
+    )
+    result = service.create_book(book)
+    assert result.id is not None
+    assert len(result.id) > 0
 
 
 def test_get_book_exists(service):
-    book_data = {
-        "id": "/books/id1",
-        "author": "/authors/id1",
-        "name": "Test Book",
-        "note": "A test",
-        "serial": "T001",
-    }
-    service.create_book(book_data)
+    book = BookCreate(
+        id="/books/id1",
+        author="/authors/id1",
+        name="Test Book",
+        note="A test",
+        serial="T001",
+    )
+    service.create_book(book)
     result = service.get_book("/books/id1")
-    assert result["id"] == "/books/id1"
+    assert result.id == "/books/id1"
 
 
 def test_get_book_not_found(service):
@@ -108,20 +121,20 @@ def test_decode_cursor_non_dict_payload_raises():
 def test_list_books_paginates(service):
     for i in range(3):
         service.create_book(
-            {
-                "id": f"b-{i}",
-                "author": "/a/1",
-                "name": f"n{i}",
-                "note": "x",
-                "serial": f"S{i}",
-            }
+            BookCreate(
+                id=f"b-{i}",
+                author="/a/1",
+                name=f"n{i}",
+                note="x",
+                serial=f"S{i}",
+            )
         )
     page1 = service.list_books(limit=2)
-    assert len(page1["items"]) == 2
-    assert page1["next_cursor"] is not None
-    assert page1["has_prev"] is False
+    assert len(page1.items) == 2
+    assert page1.next_cursor is not None
+    assert page1.has_prev is False
 
-    page2 = service.list_books(limit=2, cursor=page1["next_cursor"])
-    assert len(page2["items"]) == 1
-    assert page2["prev_cursor"] == page1["next_cursor"]
-    assert page2["has_next"] is False
+    page2 = service.list_books(limit=2, cursor=page1.next_cursor)
+    assert len(page2.items) == 1
+    assert page2.prev_cursor == page1.next_cursor
+    assert page2.has_next is False

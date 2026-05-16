@@ -1,6 +1,7 @@
+import logging
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -14,13 +15,17 @@ from src.exceptions import (
 from src.routes.auth import router as auth_router
 from src.routes.books import router as books_router
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="Books API", version="0.1.0")
 
 # CORS middleware (Spec §10)
+# NOTE: allow_origins=["*"] is intentional for this coding challenge.
+# In production, restrict to specific origins.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -29,6 +34,12 @@ app.include_router(auth_router)
 app.include_router(books_router)
 
 STATIC_DIR = Path(__file__).parent.parent / "static"
+
+
+@app.get("/health", summary="Health check")
+async def health() -> dict[str, str]:
+    """Health check endpoint for readiness probes."""
+    return {"status": "ok"}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -51,7 +62,7 @@ async def book_not_found_handler(
     exc: BookNotFoundError,
 ) -> JSONResponse:
     return JSONResponse(
-        status_code=404,
+        status_code=status.HTTP_404_NOT_FOUND,
         content={"detail": str(exc)},
     )
 
@@ -62,7 +73,7 @@ async def invalid_cursor_handler(
     exc: InvalidCursorError,
 ) -> JSONResponse:
     return JSONResponse(
-        status_code=400,
+        status_code=status.HTTP_400_BAD_REQUEST,
         content={"detail": exc.message},
     )
 
@@ -73,7 +84,7 @@ async def not_authenticated_handler(
     exc: NotAuthenticatedError,
 ) -> JSONResponse:
     return JSONResponse(
-        status_code=401,
+        status_code=status.HTTP_401_UNAUTHORIZED,
         content={"detail": exc.message},
     )
 
@@ -84,7 +95,7 @@ async def validation_error_handler(
     exc: RequestValidationError,
 ) -> JSONResponse:
     return JSONResponse(
-        status_code=400,
+        status_code=status.HTTP_400_BAD_REQUEST,
         content={"detail": exc.errors()},
     )
 
@@ -95,8 +106,9 @@ async def general_exception_handler(
     exc: Exception,
 ) -> JSONResponse:
     """Catch-all for unexpected server errors."""
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
     return JSONResponse(
-        status_code=500,
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal server error"},
     )
 

@@ -256,6 +256,17 @@
       if (body) opts.body = JSON.stringify(body);
       const res = await fetch(API + path, opts);
       const data = await res.json().catch(() => ({}));
+
+      // Auto-redirect to login on 401 (invalid or expired token).
+      if (res.status === 401 && path !== '/api/auth/login') {
+        token = null;
+        localStorage.removeItem('books_api_token');
+        document.getElementById('login-section').classList.remove('hidden');
+        document.getElementById('app-section').classList.add('hidden');
+        const loginStatus = document.getElementById('login-status');
+        showStatus(loginStatus, 'Session expired. Please log in again.', 'error');
+      }
+
       return { ok: res.ok, status: res.status, data };
     }
 

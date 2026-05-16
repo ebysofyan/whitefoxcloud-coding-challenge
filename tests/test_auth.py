@@ -1,14 +1,13 @@
 import pytest
-from fastapi import HTTPException
 
 from src.auth import TokenStore, authenticate, get_current_user
+from src.exceptions import NotAuthenticatedError
 
 
 def test_token_store_create_token():
     store = TokenStore()
     token = store.create_token("admin")
-    assert token in store._tokens
-    assert store._tokens[token] == "admin"
+    assert store.validate_token(token) == "admin"
 
 
 def test_token_store_validate_valid():
@@ -41,25 +40,22 @@ def test_authenticate_unknown_user():
 def test_get_current_user_missing_header():
     import asyncio
 
-    with pytest.raises(HTTPException) as exc:
+    with pytest.raises(NotAuthenticatedError) as exc:
         asyncio.run(get_current_user(authorization=None))
-    assert exc.value.status_code == 401
-    assert "Missing" in exc.value.detail
+    assert "Missing" in exc.value.message
 
 
 def test_get_current_user_malformed_header():
     import asyncio
 
-    with pytest.raises(HTTPException) as exc:
+    with pytest.raises(NotAuthenticatedError) as exc:
         asyncio.run(get_current_user(authorization="Token abc"))
-    assert exc.value.status_code == 401
-    assert "Invalid authorization format" in exc.value.detail
+    assert "Invalid authorization format" in exc.value.message
 
 
 def test_get_current_user_invalid_token():
     import asyncio
 
-    with pytest.raises(HTTPException) as exc:
+    with pytest.raises(NotAuthenticatedError) as exc:
         asyncio.run(get_current_user(authorization="Bearer not-a-real-token"))
-    assert exc.value.status_code == 401
-    assert "Invalid or expired token" in exc.value.detail
+    assert "Invalid or expired token" in exc.value.message

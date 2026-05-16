@@ -6,6 +6,7 @@ from moto import mock_aws
 from src.auth import token_store
 from src.config import settings
 from src.main import app
+from src.routes.books import get_book_service
 
 
 @pytest.fixture(autouse=True)
@@ -16,6 +17,9 @@ def _isolate_settings(monkeypatch):
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "testing")
     monkeypatch.setenv("AWS_SESSION_TOKEN", "testing")
     monkeypatch.setenv("AWS_DEFAULT_REGION", settings.aws_region)
+    # Clear the lru_cache so each test gets a fresh BookService
+    # bound to the current moto mock context.
+    get_book_service.cache_clear()
 
 
 @pytest.fixture

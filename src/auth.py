@@ -1,6 +1,8 @@
 import secrets
 
-from fastapi import Header, HTTPException, status
+from fastapi import Header
+
+from src.exceptions import NotAuthenticatedError
 
 
 class TokenStore:
@@ -39,24 +41,15 @@ async def get_current_user(
 ) -> str:
     """FastAPI dependency to validate current user from Authorization header."""
     if authorization is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authorization header",
-        )
+        raise NotAuthenticatedError("Missing authorization header")
 
     parts = authorization.split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization format. Use: Bearer <token>",
-        )
+        raise NotAuthenticatedError("Invalid authorization format. Use: Bearer <token>")
 
     token = parts[1]
     username = token_store.validate_token(token)
     if username is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
+        raise NotAuthenticatedError("Invalid or expired token")
 
     return username
