@@ -16,6 +16,8 @@ RESTful API built with FastAPI for book management, backed by AWS DynamoDB and d
 - Python 3.14
 - [uv](https://docs.astral.sh/uv/)
 - Docker (for DynamoDB Local)
+- [Serverless Framework](https://www.serverless.com/) v3 (`npm i -g serverless@3`)
+- AWS CLI configured (for deployment)
 
 ## Getting Started
 
@@ -144,5 +146,3 @@ make deploy          # Deploy to AWS (dev stage)
 make deploy-prod     # Deploy to AWS (production)
 make remove          # Remove deployed AWS resources
 ```
-
-Requires AWS CLI configured and Serverless Framework (`npm i -g serverless`).
