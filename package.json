@@ -1,0 +1,28 @@
+{
+  "name": "whitefoxcloud-coding-challenge",
+  "version": "1.0.0",
+  "description": "RESTful API built with FastAPI for book management, backed by AWS DynamoDB and deployable via Serverless Framework on AWS Lambda.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ebysofyan/whitefoxcloud-coding-challenge.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ebysofyan/whitefoxcloud-coding-challenge/issues"
+  },
+  "homepage": "https://github.com/ebysofyan/whitefoxcloud-coding-challenge#readme",
+  "devDependencies": {
+    "serverless-python-requirements": "^6.1.2"
+  }
+}

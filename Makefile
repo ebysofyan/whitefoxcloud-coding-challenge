@@ -59,7 +59,13 @@ fix:
 precommit:
 	uv run pre-commit run --all-files
 
-deploy:
+deps:
+	@echo "Installing Linux-compatible Python dependencies..."
+	rm -rf deps
+	pip install -r requirements.txt --target deps --platform manylinux2014_x86_64 --only-binary=:all: --python-version 3.14 --upgrade
+	rm -rf deps/boto3* deps/botocore* deps/s3transfer* deps/jmespath* deps/urllib3* deps/python_dateutil* deps/six* deps/dateutil deps/bin deps/__pycache__
+
+deploy: deps
 	serverless deploy
 
 deploy-prod:
