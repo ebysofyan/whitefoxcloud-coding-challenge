@@ -211,7 +211,9 @@
   </div>
 
   <script>
-    const API = window.location.origin;
+    // Extract base path (e.g. '/dev') from URL so API Gateway stage prefix is included.
+    const basePath = window.location.pathname.replace(/\/$/, '');
+    const API = window.location.origin + basePath;
     const PAGE_SIZE = 5;
     let token = localStorage.getItem('books_api_token');
     let currentBookId = null;
