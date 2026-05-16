@@ -24,3 +24,18 @@ class BookResponse(BaseModel):
     name: str
     note: str
     serial: str
+
+
+class BookListResponse(BaseModel):
+    """Paginated list response.
+
+    Cursors are opaque, base64-encoded JSON of DynamoDB's LastEvaluatedKey.
+    `prev_cursor` is an echo of the request's incoming cursor (one-step back).
+    """
+
+    items: list[BookResponse]
+    next_cursor: str | None = None
+    prev_cursor: str | None = None
+    has_next: bool = False
+    has_prev: bool = False
+    total: int = 0

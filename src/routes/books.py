@@ -1,10 +1,10 @@
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, Body, Depends, Path
+from fastapi import APIRouter, Body, Depends, Path, Query
 
 from src.auth import get_current_user
-from src.models import BookCreate, BookResponse
+from src.models import BookCreate, BookListResponse, BookResponse
 
 router = APIRouter(prefix="/api/books", tags=["books"])
 
@@ -27,12 +27,21 @@ def create_book(
     return BookResponse(**result)
 
 
-@router.get("", response_model=list[BookResponse])
+@router.get("", response_model=BookListResponse)
 def list_books(
     current_user: Annotated[str, Depends(get_current_user)],
-) -> list[BookResponse]:
-    results = get_service().list_books()
-    return [BookResponse(**item) for item in results]
+    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+    cursor: Annotated[str | None, Query()] = None,
+) -> BookListResponse:
+    result = get_service().list_books(limit=limit, cursor=cursor)
+    return BookListResponse(
+        items=[BookResponse(**item) for item in result["items"]],
+        next_cursor=result["next_cursor"],
+        prev_cursor=result["prev_cursor"],
+        has_next=result["has_next"],
+        has_prev=result["has_prev"],
+        total=result["total"],
+    )
 
 
 @router.get("/{book_id}", response_model=BookResponse)

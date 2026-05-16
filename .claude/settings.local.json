@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__lean-ctx__ctx_shell"
+    ]
+  },
+  "code": {
+    "attribution": {
+      "enabled": false
+    }
+  }
+}

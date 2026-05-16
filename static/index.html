@@ -115,6 +115,24 @@
       color: var(--text-muted);
       padding: 2rem;
     }
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .pagination .page-info {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button:disabled:hover {
+      background: var(--primary);
+    }
   </style>
 </head>
 <body>
@@ -130,7 +148,7 @@
         <input type="password" id="password" value="admin123" required>
         <button type="submit">Login</button>
       </form>
-      <div id="login-status" class="status"></div>
+      <div id="login-status" class="status" aria-live="polite"></div>
     </div>
 
     <div id="app-section" class="hidden">
@@ -149,11 +167,16 @@
 
       <div id="view-list" class="card">
         <h2>All Books</h2>
-        <button onclick="refreshBooks()" class="secondary small" style="margin-bottom:1rem;">Refresh</button>
+        <button onclick="resetAndRefresh()" class="secondary small" style="margin-bottom:1rem;">Refresh</button>
         <div id="books-container">
           <div class="empty-state">No books yet. Create one!</div>
         </div>
-        <div id="list-status" class="status"></div>
+        <div class="pagination">
+          <button id="btn-prev" class="secondary small" disabled onclick="prevPage()">&larr; Prev</button>
+          <span class="page-info" id="page-info"></span>
+          <button id="btn-next" class="secondary small" disabled onclick="nextPage()">Next &rarr;</button>
+        </div>
+        <div id="list-status" class="status" aria-live="polite"></div>
       </div>
 
       <div id="view-create" class="card hidden">
@@ -171,7 +194,7 @@
           <input type="text" id="book-serial" required>
           <button type="submit">Create</button>
         </form>
-        <div id="create-status" class="status"></div>
+        <div id="create-status" class="status" aria-live="polite"></div>
         <pre id="create-result" class="hidden"></pre>
       </div>
 
@@ -182,24 +205,41 @@
         <div style="margin-top:1rem;">
           <button class="danger" onclick="deleteCurrentBook()">Delete Book</button>
         </div>
-        <div id="detail-status" class="status"></div>
+        <div id="detail-status" class="status" aria-live="polite"></div>
       </div>
     </div>
   </div>
 
   <script>
     const API = window.location.origin;
+    const PAGE_SIZE = 5;
     let token = localStorage.getItem('books_api_token');
     let currentBookId = null;
+    let currentCursor = null;   // cursor used for current page (null = first page)
+    let nextCursor = null;      // server-returned next_cursor (null = end of data)
 
-    function showStatus(el, msg, isError) {
-      el.textContent = msg;
-      el.className = 'status ' + (isError ? 'error' : 'success');
+    function setStatus(el, msg, kind) {
+      // kind: 'success' | 'error' | 'info' | null (clear)
+      el.textContent = msg || '';
+      el.classList.remove('success', 'error', 'info');
+      if (kind) el.classList.add(kind);
+      el.style.display = msg ? 'block' : 'none';
     }
+    function showStatus(el, msg, isError) { setStatus(el, msg, isError ? 'error' : 'success'); }
+    function showInfo(el, msg) { setStatus(el, msg, 'info'); }
+    function clearStatus(el) { setStatus(el, '', null); }
 
-    function showInfo(el, msg) {
-      el.textContent = msg;
-      el.className = 'status info';
+    function errorDetail(data, fallback) {
+      const d = data && data.detail;
+      if (typeof d === 'string') return d;
+      if (Array.isArray(d) && d.length) {
+        const first = d[0];
+        if (first && first.msg) {
+          const loc = Array.isArray(first.loc) ? first.loc.join('.') : '';
+          return loc ? `${loc}: ${first.msg}` : first.msg;
+        }
+      }
+      return fallback || 'Request failed';
     }
 
     function showResult(el, data) {
@@ -224,7 +264,18 @@
       document.getElementById('view-' + view).classList.remove('hidden');
       document.querySelectorAll('.nav button').forEach(btn => btn.classList.remove('active'));
       document.getElementById('btn-' + (view === 'detail' ? 'list' : view)).classList.add('active');
-      if (view === 'list') refreshBooks();
+      // Clear stale statuses on view change.
+      ['list-status', 'create-status', 'detail-status'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) clearStatus(el);
+      });
+      if (view === 'list') resetAndRefresh();
+    }
+
+    function resetAndRefresh() {
+      currentCursor = null;
+      nextCursor = null;
+      refreshBooks();
     }
 
     async function login() {
@@ -242,7 +293,7 @@
         document.getElementById('app-section').classList.remove('hidden');
         showView('list');
       } else {
-        showStatus(statusEl, res.data.detail || 'Login failed', true);
+        showStatus(statusEl, errorDetail(res.data, 'Login failed'), true);
       }
     }
 
@@ -254,31 +305,96 @@
       document.getElementById('login-form').reset();
     }
 
+    function renderBook(book) {
+      // DOM construction — never use innerHTML with API data (XSS prevention).
+      const li = document.createElement('li');
+      li.className = 'book-item';
+      li.addEventListener('click', () => showBookDetail(book.id));
+
+      const info = document.createElement('div');
+      const name = document.createElement('div');
+      name.className = 'book-name';
+      name.textContent = book.name;
+      const id = document.createElement('div');
+      id.className = 'book-id';
+      id.textContent = book.id;
+      info.appendChild(name);
+      info.appendChild(id);
+
+      const actions = document.createElement('div');
+      actions.className = 'book-actions';
+      const del = document.createElement('button');
+      del.className = 'danger small';
+      del.textContent = 'Delete';
+      del.setAttribute('aria-label', 'Delete book ' + book.id);
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteBook(book.id);
+      });
+      actions.appendChild(del);
+
+      li.appendChild(info);
+      li.appendChild(actions);
+      return li;
+    }
+
     async function refreshBooks() {
       const container = document.getElementById('books-container');
       const statusEl = document.getElementById('list-status');
+      const btnPrev = document.getElementById('btn-prev');
+      const btnNext = document.getElementById('btn-next');
+      const pageInfo = document.getElementById('page-info');
+
       showInfo(statusEl, 'Loading...');
-      const res = await request('GET', '/api/books');
-      if (res.ok) {
-        statusEl.classList.add('hidden');
-        if (res.data.length === 0) {
-          container.innerHTML = '<div class="empty-state">No books yet. Create one!</div>';
-          return;
-        }
-        container.innerHTML = '<ul class="book-list">' + res.data.map(book => `
-          <li class="book-item" onclick="showBookDetail('${book.id}')">
-            <div>
-              <div class="book-name">${book.name}</div>
-              <div class="book-id">${book.id}</div>
-            </div>
-            <div class="book-actions">
-              <button class="danger small" onclick="event.stopPropagation();deleteBook('${book.id}')">Delete</button>
-            </div>
-          </li>
-        `).join('') + '</ul>';
-      } else {
-        showStatus(statusEl, 'Error ' + res.status + ': ' + JSON.stringify(res.data.detail), true);
+      btnPrev.disabled = true;
+      btnNext.disabled = true;
+
+      const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
+      if (currentCursor) params.set('cursor', currentCursor);
+      const res = await request('GET', '/api/books?' + params.toString());
+
+      if (!res.ok) {
+        showStatus(statusEl, 'Error ' + res.status + ': ' + errorDetail(res.data), true);
+        pageInfo.textContent = '';
+        return;
       }
+
+      clearStatus(statusEl);
+      const { items = [], next_cursor, has_next, has_prev, total } = res.data;
+      nextCursor = next_cursor || null;
+
+      // Render list (or empty state).
+      container.replaceChildren();
+      if (items.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.textContent = 'No books yet. Create one!';
+        container.appendChild(empty);
+      } else {
+        const ul = document.createElement('ul');
+        ul.className = 'book-list';
+        items.forEach(book => ul.appendChild(renderBook(book)));
+        container.appendChild(ul);
+      }
+
+      btnPrev.disabled = !has_prev;
+      btnNext.disabled = !has_next;
+      pageInfo.textContent = `${items.length} shown · ${total} total`;
+    }
+
+    function nextPage() {
+      if (!nextCursor) return;
+      currentCursor = nextCursor;
+      refreshBooks();
+    }
+
+    function prevPage() {
+      // Server returns prev_cursor = echo of the cursor that fetched this page.
+      // To go back one step, drop currentCursor (revisit the page that came before).
+      // Note: only single-step back; refreshing/reloading resets to page 1.
+      if (!currentCursor) return;
+      currentCursor = null;
+      refreshBooks();
     }
 
     async function showBookDetail(bookId) {
@@ -288,7 +404,7 @@
         document.getElementById('detail-result').textContent = JSON.stringify(res.data, null, 2);
         showView('detail');
       } else {
-        showStatus(document.getElementById('detail-status'), 'Error: ' + JSON.stringify(res.data.detail), true);
+        showStatus(document.getElementById('detail-status'), 'Error: ' + errorDetail(res.data), true);
       }
     }
 
@@ -298,7 +414,7 @@
       if (res.ok || res.status === 204) {
         refreshBooks();
       } else {
-        showStatus(document.getElementById('list-status'), 'Error: ' + JSON.stringify(res.data.detail), true);
+        showStatus(document.getElementById('list-status'), 'Error: ' + errorDetail(res.data), true);
       }
     }
 
@@ -331,9 +447,8 @@
         showStatus(statusEl, 'Book created (201)', false);
         showResult(resultEl, res.data);
         document.getElementById('create-form').reset();
-        setTimeout(() => showView('list'), 1500);
       } else {
-        showStatus(statusEl, 'Error ' + res.status + ': ' + JSON.stringify(res.data.detail), true);
+        showStatus(statusEl, 'Error ' + res.status + ': ' + errorDetail(res.data), true);
       }
     });
 

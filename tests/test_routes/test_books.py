@@ -61,6 +61,7 @@ def test_list_books_unauthorized(client, dynamodb_table):
 
 
 def test_list_books_success(client, dynamodb_table, auth_token):
+    headers = {"Authorization": f"Bearer {auth_token}"}
     client.post(
         "/api/books",
         json={
@@ -70,7 +71,7 @@ def test_list_books_success(client, dynamodb_table, auth_token):
             "note": "Note 1",
             "serial": "S001",
         },
-        headers={"Authorization": f"Bearer {auth_token}"},
+        headers=headers,
     )
     client.post(
         "/api/books",
@@ -81,15 +82,59 @@ def test_list_books_success(client, dynamodb_table, auth_token):
             "note": "Note 2",
             "serial": "S002",
         },
-        headers={"Authorization": f"Bearer {auth_token}"},
+        headers=headers,
     )
-    response = client.get(
-        "/api/books", headers={"Authorization": f"Bearer {auth_token}"}
-    )
+    response = client.get("/api/books", headers=headers)
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] in ("book-1", "book-2")
+    assert "items" in data
+    assert len(data["items"]) == 2
+    assert data["items"][0]["id"] in ("book-1", "book-2")
+    assert data["has_prev"] is False
+    assert data["prev_cursor"] is None
+
+
+def test_list_books_pagination_next_then_prev(client, dynamodb_table, auth_token):
+    """Walk forward with next_cursor, then back via prev_cursor (one-step echo)."""
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    for i in range(3):
+        client.post(
+            "/api/books",
+            json={
+                "id": f"book-{i}",
+                "author": "/authors/id1",
+                "name": f"Book {i}",
+                "note": "n",
+                "serial": f"S{i:03d}",
+            },
+            headers=headers,
+        )
+
+    page1 = client.get("/api/books?limit=2", headers=headers).json()
+    assert len(page1["items"]) == 2
+    assert page1["has_next"] is True
+    assert page1["has_prev"] is False
+    assert page1["next_cursor"] is not None
+
+    page2 = client.get(
+        f"/api/books?limit=2&cursor={page1['next_cursor']}",
+        headers=headers,
+    ).json()
+    assert len(page2["items"]) == 1
+    assert page2["has_prev"] is True
+    assert page2["prev_cursor"] == page1["next_cursor"]
+
+
+def test_list_books_invalid_cursor(client, dynamodb_table, auth_token):
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    response = client.get("/api/books?cursor=not-base64!!!", headers=headers)
+    assert response.status_code == 400
+
+
+def test_list_books_limit_validation(client, dynamodb_table, auth_token):
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    response = client.get("/api/books?limit=0", headers=headers)
+    assert response.status_code == 400
 
 
 def test_get_book_unauthorized(client, dynamodb_table):

@@ -8,6 +8,7 @@ from mangum import Mangum
 
 from src.exceptions import (
     BookNotFoundError,
+    InvalidCursorError,
     NotAuthenticatedError,
 )
 from src.routes.auth import router as auth_router
@@ -52,6 +53,17 @@ async def book_not_found_handler(
     return JSONResponse(
         status_code=404,
         content={"detail": str(exc)},
+    )
+
+
+@app.exception_handler(InvalidCursorError)
+async def invalid_cursor_handler(
+    request: Request,
+    exc: InvalidCursorError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content={"detail": exc.message},
     )
 
 

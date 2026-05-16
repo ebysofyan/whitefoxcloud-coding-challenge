@@ -3,8 +3,12 @@ import pytest
 from moto import mock_aws
 
 from src.config import settings
-from src.exceptions import BookNotFoundError
-from src.services.book_service import BookService
+from src.exceptions import BookNotFoundError, InvalidCursorError
+from src.services.book_service import (
+    BookService,
+    _decode_cursor,
+    _encode_cursor,
+)
 
 
 @pytest.fixture
@@ -69,3 +73,55 @@ def test_service_uses_dynamodb_endpoint(monkeypatch):
     BookService()
     assert captured["endpoint_url"] == "http://localhost:9999"
     assert captured["region_name"] == settings.aws_region
+
+
+def test_encode_cursor_none_returns_none():
+    assert _encode_cursor(None) is None
+    assert _encode_cursor({}) is None
+
+
+def test_encode_decode_cursor_round_trip():
+    key = {"id": "book-1"}
+    cursor = _encode_cursor(key)
+    assert cursor is not None
+    assert _decode_cursor(cursor) == key
+
+
+def test_decode_cursor_none_returns_none():
+    assert _decode_cursor(None) is None
+    assert _decode_cursor("") is None
+
+
+def test_decode_cursor_invalid_base64_raises():
+    with pytest.raises(InvalidCursorError):
+        _decode_cursor("not-base64!!!")
+
+
+def test_decode_cursor_non_dict_payload_raises():
+    import base64
+
+    payload = base64.urlsafe_b64encode(b'"just-a-string"').decode("ascii")
+    with pytest.raises(InvalidCursorError):
+        _decode_cursor(payload)
+
+
+def test_list_books_paginates(service):
+    for i in range(3):
+        service.create_book(
+            {
+                "id": f"b-{i}",
+                "author": "/a/1",
+                "name": f"n{i}",
+                "note": "x",
+                "serial": f"S{i}",
+            }
+        )
+    page1 = service.list_books(limit=2)
+    assert len(page1["items"]) == 2
+    assert page1["next_cursor"] is not None
+    assert page1["has_prev"] is False
+
+    page2 = service.list_books(limit=2, cursor=page1["next_cursor"])
+    assert len(page2["items"]) == 1
+    assert page2["prev_cursor"] == page1["next_cursor"]
+    assert page2["has_next"] is False

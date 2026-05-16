@@ -38,7 +38,7 @@
   },
   "build": {
     "buildCommand": "make build",
-    "testCommand": "uv run pytest --cov=src --cov-fail-under=90 2>&1 | tail -15",
+    "testCommand": "uv run pytest tests/test_main.py -v 2>&1 | tail -15",
     "lintCommand": "ruff check",
     "devCommand": null,
     "scripts": {}
@@ -140,15 +140,51 @@
   },
   "hotPaths": [
     {
+      "path": "static/index.html",
+      "accessCount": 13,
+      "lastAccessed": 1778947669018,
+      "type": "file"
+    },
+    {
       "path": "tests/test_routes/test_books.py",
+      "accessCount": 7,
+      "lastAccessed": 1778947584141,
+      "type": "file"
+    },
+    {
+      "path": "src/main.py",
+      "accessCount": 6,
+      "lastAccessed": 1778947525127,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_services/test_book_service.py",
       "accessCount": 5,
-      "lastAccessed": 1778942965609,
+      "lastAccessed": 1778947603490,
       "type": "file"
     },
     {
       "path": "tests/test_auth.py",
       "accessCount": 4,
       "lastAccessed": 1778942663707,
+      "type": "file"
+    },
+    {
+      "path": "src/models.py",
+      "accessCount": 4,
+      "lastAccessed": 1778947493265,
+      "type": "file"
+    },
+    {
+      "path": "src/routes/books.py",
+      "accessCount": 4,
+      "lastAccessed": 1778947493866,
+      "type": "file"
+    },
+    {
+      "path": "src/services/book_service.py",
+      "accessCount": 4,
+      "lastAccessed": 1778947524378,
       "type": "file"
     },
     {
@@ -170,27 +206,21 @@
       "type": "file"
     },
     {
-      "path": "src/main.py",
+      "path": "tests/conftest.py",
       "accessCount": 3,
-      "lastAccessed": 1778944803770,
+      "lastAccessed": 1778947446400,
       "type": "file"
     },
     {
-      "path": "tests/conftest.py",
-      "accessCount": 2,
-      "lastAccessed": 1778942563239,
+      "path": "src/exceptions.py",
+      "accessCount": 3,
+      "lastAccessed": 1778947461124,
       "type": "file"
     },
     {
       "path": "tests/test_config.py",
       "accessCount": 2,
       "lastAccessed": 1778942588255,
-      "type": "file"
-    },
-    {
-      "path": "tests/test_services/test_book_service.py",
-      "accessCount": 2,
-      "lastAccessed": 1778942672686,
       "type": "file"
     },
     {
@@ -212,27 +242,15 @@
       "type": "file"
     },
     {
-      "path": "src/routes/books.py",
-      "accessCount": 2,
-      "lastAccessed": 1778944803695,
-      "type": "file"
-    },
-    {
-      "path": "src/models.py",
-      "accessCount": 2,
-      "lastAccessed": 1778944803752,
-      "type": "file"
-    },
-    {
       "path": "src/auth.py",
       "accessCount": 2,
       "lastAccessed": 1778944803804,
       "type": "file"
     },
     {
-      "path": "src/services/book_service.py",
+      "path": "src/config.py",
       "accessCount": 2,
-      "lastAccessed": 1778944803865,
+      "lastAccessed": 1778947446449,
       "type": "file"
     },
     {
@@ -254,18 +272,6 @@
       "type": "file"
     },
     {
-      "path": "static/index.html",
-      "accessCount": 1,
-      "lastAccessed": 1778940290378,
-      "type": "file"
-    },
-    {
-      "path": "src/config.py",
-      "accessCount": 1,
-      "lastAccessed": 1778940290546,
-      "type": "file"
-    },
-    {
       "path": "tests/test_models.py",
       "accessCount": 1,
       "lastAccessed": 1778940306723,
@@ -281,12 +287,6 @@
       "path": "tests/test_routes/test_auth.py",
       "accessCount": 1,
       "lastAccessed": 1778940307003,
-      "type": "file"
-    },
-    {
-      "path": "src/exceptions.py",
-      "accessCount": 1,
-      "lastAccessed": 1778940307114,
       "type": "file"
     },
     {
