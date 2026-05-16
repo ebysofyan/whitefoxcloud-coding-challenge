@@ -1,8 +1,10 @@
-.PHONY: help setup dev test test-unit test-integration coverage lint format fix precommit deploy deploy-prod remove clean
+.PHONY: help setup db db-init dev test test-unit test-integration coverage lint format fix precommit deploy deploy-prod remove clean
 
 help:
 	@echo "Available targets:"
 	@echo "  setup        Install dependencies and pre-commit hooks"
+	@echo "  db            Start DynamoDB Local (docker compose)"
+	@echo "  db-init       Create DynamoDB table in local instance"
 	@echo "  dev           Start FastAPI development server"
 	@echo "  test          Run all tests (unit + integration)"
 	@echo "  test-unit     Run unit tests only"
@@ -21,8 +23,16 @@ setup:
 	uv sync --all-extras
 	uv run pre-commit install
 
+db:
+	docker compose up -d dynamodb-local
+	@echo "DynamoDB Local started at http://localhost:18749"
+	@echo "Set DYNAMODB_ENDPOINT=http://localhost:18749 in your .env file"
+
+db-init:
+	uv run python scripts/init_db.py
+
 dev:
-	uv run fastapi dev src.main:app
+	uv run fastapi dev src/main.py --port 9876
 
 test:
 	uv run pytest -v
