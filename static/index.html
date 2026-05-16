@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Books API</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 800px; width: 100%; }
+    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 { font-size: 1.1rem; margin-bottom: 0.75rem; }
+    label { display: block; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+    input, textarea {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--primary); }
+    button {
+      padding: 0.6rem 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover { background: var(--primary-hover); }
+    button.secondary { background: var(--surface); border: 1px solid var(--border); }
+    button.secondary:hover { background: var(--border); }
+    button.danger { background: var(--error); }
+    button.danger:hover { background: #dc2626; }
+    button.small { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+    .status {
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+      display: none;
+    }
+    .status.success { display: block; background: #052e16; color: var(--success); }
+    .status.error { display: block; background: #450a0a; color: var(--error); }
+    .status.info { display: block; background: #1e3a5f; color: var(--primary); }
+    pre {
+      background: var(--bg);
+      padding: 0.75rem;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      white-space: pre-wrap;
+    }
+    .hidden { display: none; }
+    .book-list { list-style: none; }
+    .book-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: var(--bg);
+      border-radius: var(--radius);
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+    .book-item:hover { background: var(--border); }
+    .book-item .book-name { font-weight: 500; }
+    .book-item .book-id { font-size: 0.75rem; color: var(--text-muted); }
+    .book-actions { display: flex; gap: 0.5rem; }
+    .nav { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .nav button { flex: 1; }
+    .nav button.active { background: var(--primary-hover); }
+    #token-display {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      word-break: break-all;
+    }
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Books API</h1>
+
+    <div class="card" id="login-section">
+      <h2>Login</h2>
+      <form id="login-form">
+        <label for="username">Username</label>
+        <input type="text" id="username" value="admin" required>
+        <label for="password">Password</label>
+        <input type="password" id="password" value="admin123" required>
+        <button type="submit">Login</button>
+      </form>
+      <div id="login-status" class="status"></div>
+    </div>
+
+    <div id="app-section" class="hidden">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>Welcome, <span id="user-display">admin</span></h2>
+          <button class="secondary small" onclick="logout()">Logout</button>
+        </div>
+        <p id="token-display"></p>
+      </div>
+
+      <div class="nav">
+        <button class="active" onclick="showView('list')" id="btn-list">Books</button>
+        <button onclick="showView('create')" id="btn-create">Create</button>
+      </div>
+
+      <div id="view-list" class="card">
+        <h2>All Books</h2>
+        <button onclick="refreshBooks()" class="secondary small" style="margin-bottom:1rem;">Refresh</button>
+        <div id="books-container">
+          <div class="empty-state">No books yet. Create one!</div>
+        </div>
+        <div id="list-status" class="status"></div>
+      </div>
+
+      <div id="view-create" class="card hidden">
+        <h2>Create Book</h2>
+        <form id="create-form">
+          <label for="book-id">ID (optional — auto-generated if empty)</label>
+          <input type="text" id="book-id" placeholder="leave empty for auto-generated ID">
+          <label for="book-author">Author</label>
+          <input type="text" id="book-author" placeholder="/authors/author-1" required>
+          <label for="book-name">Name</label>
+          <input type="text" id="book-name" required>
+          <label for="book-note">Note</label>
+          <input type="text" id="book-note">
+          <label for="book-serial">Serial</label>
+          <input type="text" id="book-serial" required>
+          <button type="submit">Create</button>
+        </form>
+        <div id="create-status" class="status"></div>
+        <pre id="create-result" class="hidden"></pre>
+      </div>
+
+      <div id="view-detail" class="card hidden">
+        <h2>Book Detail</h2>
+        <button onclick="showView('list')" class="secondary small" style="margin-bottom:1rem;">&larr; Back</button>
+        <pre id="detail-result"></pre>
+        <div style="margin-top:1rem;">
+          <button class="danger" onclick="deleteCurrentBook()">Delete Book</button>
+        </div>
+        <div id="detail-status" class="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+    let token = localStorage.getItem('books_api_token');
+    let currentBookId = null;
+
+    function showStatus(el, msg, isError) {
+      el.textContent = msg;
+      el.className = 'status ' + (isError ? 'error' : 'success');
+    }
+
+    function showInfo(el, msg) {
+      el.textContent = msg;
+      el.className = 'status info';
+    }
+
+    function showResult(el, data) {
+      el.textContent = JSON.stringify(data, null, 2);
+      el.classList.remove('hidden');
+    }
+
+    async function request(method, path, body) {
+      const opts = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (token) opts.headers.Authorization = 'Bearer ' + token;
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(API + path, opts);
+      const data = await res.json().catch(() => ({}));
+      return { ok: res.ok, status: res.status, data };
+    }
+
+    function showView(view) {
+      document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('view-' + view).classList.remove('hidden');
+      document.querySelectorAll('.nav button').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('btn-' + (view === 'detail' ? 'list' : view)).classList.add('active');
+      if (view === 'list') refreshBooks();
+    }
+
+    async function login() {
+      const statusEl = document.getElementById('login-status');
+      const res = await request('POST', '/api/auth/login', {
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+      });
+      if (res.ok) {
+        token = res.data.token;
+        localStorage.setItem('books_api_token', token);
+        showStatus(statusEl, 'Login successful', false);
+        document.getElementById('token-display').textContent = 'Token: ' + token;
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('app-section').classList.remove('hidden');
+        showView('list');
+      } else {
+        showStatus(statusEl, res.data.detail || 'Login failed', true);
+      }
+    }
+
+    function logout() {
+      token = null;
+      localStorage.removeItem('books_api_token');
+      document.getElementById('login-section').classList.remove('hidden');
+      document.getElementById('app-section').classList.add('hidden');
+      document.getElementById('login-form').reset();
+    }
+
+    async function refreshBooks() {
+      const container = document.getElementById('books-container');
+      const statusEl = document.getElementById('list-status');
+      showInfo(statusEl, 'Loading...');
+      const res = await request('GET', '/api/books');
+      if (res.ok) {
+        statusEl.classList.add('hidden');
+        if (res.data.length === 0) {
+          container.innerHTML = '<div class="empty-state">No books yet. Create one!</div>';
+          return;
+        }
+        container.innerHTML = '<ul class="book-list">' + res.data.map(book => `
+          <li class="book-item" onclick="showBookDetail('${book.id}')">
+            <div>
+              <div class="book-name">${book.name}</div>
+              <div class="book-id">${book.id}</div>
+            </div>
+            <div class="book-actions">
+              <button class="danger small" onclick="event.stopPropagation();deleteBook('${book.id}')">Delete</button>
+            </div>
+          </li>
+        `).join('') + '</ul>';
+      } else {
+        showStatus(statusEl, 'Error ' + res.status + ': ' + JSON.stringify(res.data.detail), true);
+      }
+    }
+
+    async function showBookDetail(bookId) {
+      currentBookId = bookId;
+      const res = await request('GET', '/api/books/' + encodeURIComponent(bookId));
+      if (res.ok) {
+        document.getElementById('detail-result').textContent = JSON.stringify(res.data, null, 2);
+        showView('detail');
+      } else {
+        showStatus(document.getElementById('detail-status'), 'Error: ' + JSON.stringify(res.data.detail), true);
+      }
+    }
+
+    async function deleteBook(bookId) {
+      if (!confirm('Delete book ' + bookId + '?')) return;
+      const res = await request('DELETE', '/api/books/' + encodeURIComponent(bookId));
+      if (res.ok || res.status === 204) {
+        refreshBooks();
+      } else {
+        showStatus(document.getElementById('list-status'), 'Error: ' + JSON.stringify(res.data.detail), true);
+      }
+    }
+
+    async function deleteCurrentBook() {
+      if (!currentBookId) return;
+      await deleteBook(currentBookId);
+      showView('list');
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await login();
+    });
+
+    document.getElementById('create-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById('create-status');
+      const resultEl = document.getElementById('create-result');
+      resultEl.classList.add('hidden');
+      const bookId = document.getElementById('book-id').value;
+      const payload = {
+        author: document.getElementById('book-author').value,
+        name: document.getElementById('book-name').value,
+        note: document.getElementById('book-note').value,
+        serial: document.getElementById('book-serial').value,
+      };
+      if (bookId) payload.id = bookId;
+      const res = await request('POST', '/api/books', payload);
+      if (res.ok) {
+        showStatus(statusEl, 'Book created (201)', false);
+        showResult(resultEl, res.data);
+        document.getElementById('create-form').reset();
+        setTimeout(() => showView('list'), 1500);
+      } else {
+        showStatus(statusEl, 'Error ' + res.status + ': ' + JSON.stringify(res.data.detail), true);
+      }
+    });
+
+    if (token) {
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('app-section').classList.remove('hidden');
+      document.getElementById('token-display').textContent = 'Token: ' + token;
+      showView('list');
+    }
+  </script>
+</body>
+</html>
