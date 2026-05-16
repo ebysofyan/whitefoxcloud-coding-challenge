@@ -1,136 +1,109 @@
-# Books API
+# Books API — Python Coding Challenge
 
-FastAPI-based REST API for book management with DynamoDB backend, deployed on AWS Lambda via Serverless Framework.
+RESTful API built with FastAPI for book management, backed by AWS DynamoDB and deployable via Serverless Framework on AWS Lambda.
 
 ## Tech Stack
 
-- **Runtime**: Python 3.14
-- **Framework**: FastAPI + Pydantic 2
-- **Database**: Amazon DynamoDB
-- **Deployment**: Serverless Framework on AWS Lambda
-- **Package Manager**: uv
-- **Linting/Formatting**: ruff + pre-commit
-- **Testing**: pytest + pytest-cov (≥90% coverage)
+- **Python 3.14** with **FastAPI** + **Pydantic 2**
+- **AWS DynamoDB** (local via Docker or cloud)
+- **AWS Lambda** + **API Gateway** via [Serverless Framework](https://www.serverless.com/)
+- **uv** — package manager
+- **ruff** — linter & formatter
+- **pytest** + **pytest-cov** — testing with ≥90% coverage gate
 
-## Quick Start
-
-### Prerequisites
+## Prerequisites
 
 - Python 3.14
 - [uv](https://docs.astral.sh/uv/)
-- AWS CLI configured (for deployment)
-- Serverless Framework (`npm i -g serverless`)
+- Docker (for DynamoDB Local)
 
-### Local Development
-
-**Option A: With DynamoDB Local (no AWS credentials needed)**
+## Getting Started
 
 ```bash
-# Start DynamoDB Local
+# 1. Install dependencies and pre-commit hooks
+make setup
+
+# 2. Start DynamoDB Local
 make db
 
-# Create .env file
+# 3. Create .env (only needed once)
 echo "DYNAMODB_ENDPOINT=http://localhost:18749" > .env
 
-# Install dependencies + pre-commit hooks
-make setup
-
-# Start dev server (runs on port 9876)
+# 4. Start dev server (http://localhost:9876)
 make dev
 ```
 
-**Option B: With AWS DynamoDB (requires AWS credentials)**
+## Running Tests
 
 ```bash
-# Configure AWS credentials
-aws configure
-
-# Install dependencies + pre-commit hooks
-make setup
-
-# Start dev server
-make dev
-```
-
-**Common commands:**
-
-```bash
-# Run tests with coverage
+# Run all tests (unit + integration)
 make test
 
-# Lint and format
-make lint
-make format
+# Run unit tests only
+make test-unit
 
-# Auto-fix lint issues + format
-make fix
+# Run integration tests only
+make test-integration
 
 # Run tests with 90% coverage gate
 make coverage
 ```
 
-### API Endpoints
+**Current coverage: 100% (55 tests)**
 
-| Method | Path | Description | Auth |
-|--------|------|-------------|------|
-| POST | `/api/auth/login` | Login with username/password | No |
-| GET | `/api/books` | List all books | Yes |
-| POST | `/api/books` | Create a book | Yes |
-| GET | `/api/books/{book_id}` | Get a book by ID | Yes |
-| DELETE | `/api/books/{book_id}` | Delete a book | Yes |
-| GET | `/` | Web UI client | No |
+## API Endpoints
 
-### Authentication
+All `/api/books` endpoints require authentication via Bearer token.
 
-Basic token-based auth. Login returns an access token to use in subsequent requests:
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/auth/login` | No | Login, returns access token |
+| `POST` | `/api/books` | Yes | Create a book |
+| `GET` | `/api/books` | Yes | List books (cursor-paginated) |
+| `GET` | `/api/books/{id}` | Yes | Get a book by ID |
+| `DELETE` | `/api/books/{id}` | Yes | Delete a book |
+
+### Example: Create a Book
 
 ```bash
 # Login
-curl -X POST http://localhost:9876/api/auth/login \
+curl -s -X POST http://localhost:9876/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "admin", "password": "admin123"}'
 
-# Use token
-curl http://localhost:9876/api/books/book-1 \
+# Create book (use token from login response)
+curl -X POST http://localhost:9876/api/books \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "id": "/books/id1",
+    "author": "/authors/id1",
+    "name": "Fancy Tech",
+    "note": "Awesome book for beginners in Fancy.",
+    "serial": "C040102"
+  }'
+# → 201 Created
+
+# Get book
+curl http://localhost:9876/api/books/id1 \
   -H "Authorization: Bearer <token>"
+# → 200 OK with book JSON
 ```
 
 Default credentials: `admin` / `admin123`
 
-### Web UI
+### Error Responses
 
-Open `http://localhost:9876` in a browser for a single-page client with:
-- Login / Logout
-- List all books
-- View book detail
-- Create new book
-- Delete book
+| Status | When |
+|--------|------|
+| `400 Bad Request` | Missing required fields in the payload |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `404 Not Found` | Book ID does not exist |
+| `500 Internal Server Error` | Unexpected server-side error |
 
-### AWS Free Tier
+## Web UI (Bonus)
 
-DynamoDB is included in the [AWS Free Tier](https://aws.amazon.com/free/):
-
-| Resource | Free Tier Limit |
-|----------|----------------|
-| Storage | 25 GB |
-| Read Requests | 2.5 million/month |
-| Write Requests | 1 million/month |
-| Duration | 12 months |
-
-Sufficient for development, demos, and small projects. No charges if you stay within these limits.
-
-## Deployment
-
-```bash
-# Deploy to AWS (dev stage)
-make deploy
-
-# Deploy to production
-make deploy-prod
-
-# Remove deployment
-make remove
-```
+Open `http://localhost:9876` in a browser for a single-page client that supports login/logout, listing books, viewing details, creating, and deleting books.
 
 ## Project Structure
 
@@ -139,7 +112,7 @@ make remove
 │   ├── main.py              # FastAPI app + Lambda handler (mangum)
 │   ├── config.py            # Pydantic settings
 │   ├── models.py            # Request/response schemas
-│   ├── exceptions.py        # Custom exceptions
+│   ├── exceptions.py        # Custom exception classes
 │   ├── auth.py              # Token-based authentication
 │   ├── routes/
 │   │   ├── auth.py          # Login endpoint
@@ -147,40 +120,29 @@ make remove
 │   └── services/
 │       └── book_service.py  # DynamoDB operations
 ├── tests/
+│   ├── conftest.py          # Shared fixtures
 │   ├── test_auth.py
 │   ├── test_config.py
 │   ├── test_exceptions.py
+│   ├── test_main.py
 │   ├── test_models.py
-│   ├── test_routes/
-│   │   ├── test_auth.py
-│   │   └── test_books.py
-│   └── test_services/
-│       └── test_book_service.py
+│   ├── test_routes/         # Route-level tests
+│   ├── test_services/       # Service-level tests
+│   └── integration/         # Integration tests
 ├── static/
 │   └── index.html           # Web UI client
 ├── serverless.yml           # AWS Lambda deployment config
-├── pyproject.toml           # Project metadata + deps
+├── pyproject.toml           # Project metadata + dependencies
 ├── Makefile                 # Developer task runner
-└── .pre-commit-config.yaml  # Git hooks
+└── docker-compose.yml       # DynamoDB Local
 ```
 
-## Makefile Targets
+## Deployment
 
-| Target | Description |
-|--------|-------------|
-| `make setup` | Install dependencies + pre-commit hooks |
-| `make db` | Start DynamoDB Local (Docker) |
-| `make dev` | Start FastAPI dev server |
-| `make test` | Run all tests |
-| `make test-unit` | Run unit tests only |
-| `make test-integration` | Run integration tests only |
-| `make coverage` | Run tests with 90% coverage gate |
-| `make lint` | Run ruff linter |
-| `make format` | Run ruff formatter |
-| `make fix` | Auto-fix lint issues + format |
-| `make precommit` | Run pre-commit hooks on all files |
-| `make deploy` | Deploy to AWS (dev stage) |
-| `make deploy-prod` | Deploy to AWS (production) |
-| `make remove` | Remove deployed AWS resources |
-| `make clean` | Remove local artifacts and caches |
-| `make help` | Show all available targets |
+```bash
+make deploy          # Deploy to AWS (dev stage)
+make deploy-prod     # Deploy to AWS (production)
+make remove          # Remove deployed AWS resources
+```
+
+Requires AWS CLI configured and Serverless Framework (`npm i -g serverless`).
