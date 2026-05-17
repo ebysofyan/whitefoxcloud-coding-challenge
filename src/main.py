@@ -6,12 +6,15 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from mangum import Mangum
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.exceptions import (
     BookNotFoundError,
     InvalidCursorError,
     NotAuthenticatedError,
+    RateLimitExceededError,
 )
+from src.middleware.rate_limit import rate_limit_middleware
 from src.routes.auth import router as auth_router
 from src.routes.books import router as books_router
 
@@ -28,6 +31,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+app.add_middleware(BaseHTTPMiddleware, dispatch=rate_limit_middleware)
 
 # Include routers
 app.include_router(auth_router)
@@ -86,6 +91,18 @@ async def not_authenticated_handler(
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={"detail": exc.message},
+    )
+
+
+@app.exception_handler(RateLimitExceededError)
+async def rate_limit_exceeded_handler(
+    request: Request,
+    exc: RateLimitExceededError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        content={"detail": exc.message},
+        headers={"Retry-After": str(int(exc.retry_after) + 1)},
     )
 
 

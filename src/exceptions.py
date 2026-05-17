@@ -22,3 +22,15 @@ class InvalidCursorError(BookAPIError):
 
     def __init__(self, message: str = "Invalid pagination cursor"):
         super().__init__(message)
+
+
+class RateLimitExceededError(BookAPIError):
+    """Raised when a client exceeds the allowed request rate."""
+
+    def __init__(
+        self,
+        message: str = "Rate limit exceeded",
+        retry_after: float = 0.0,
+    ):
+        self.retry_after = retry_after
+        super().__init__(message)

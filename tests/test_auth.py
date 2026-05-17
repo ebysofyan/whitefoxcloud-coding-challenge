@@ -1,3 +1,6 @@
+import asyncio
+import time
+
 import pytest
 
 from src.auth import TokenStore, authenticate, get_current_user
@@ -21,6 +24,32 @@ def test_token_store_validate_invalid():
     assert store.validate_token("invalid-token") is None
 
 
+def test_token_expiry():
+    store = TokenStore(ttl=1)
+    token = store.create_token("admin")
+    assert store.validate_token(token) == "admin"
+    time.sleep(1.1)
+    assert store.validate_token(token) is None
+
+
+def test_cleanup_expired():
+    store = TokenStore(ttl=1)
+    token1 = store.create_token("admin")
+    token2 = store.create_token("admin")
+    time.sleep(1.1)
+    removed = store.cleanup_expired()
+    assert removed == 2
+    assert store.validate_token(token1) is None
+    assert store.validate_token(token2) is None
+
+
+def test_cleanup_no_expired():
+    store = TokenStore(ttl=3600)
+    store.create_token("admin")
+    removed = store.cleanup_expired()
+    assert removed == 0
+
+
 def test_authenticate_success():
     token = authenticate("admin", "admin123")
     assert token is not None
@@ -38,7 +67,6 @@ def test_authenticate_unknown_user():
 
 
 def test_get_current_user_missing_header():
-    import asyncio
 
     with pytest.raises(NotAuthenticatedError) as exc:
         asyncio.run(get_current_user(authorization=None))
@@ -46,7 +74,6 @@ def test_get_current_user_missing_header():
 
 
 def test_get_current_user_malformed_header():
-    import asyncio
 
     with pytest.raises(NotAuthenticatedError) as exc:
         asyncio.run(get_current_user(authorization="Token abc"))
@@ -54,7 +81,6 @@ def test_get_current_user_malformed_header():
 
 
 def test_get_current_user_invalid_token():
-    import asyncio
 
     with pytest.raises(NotAuthenticatedError) as exc:
         asyncio.run(get_current_user(authorization="Bearer not-a-real-token"))
