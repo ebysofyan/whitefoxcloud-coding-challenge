@@ -78,15 +78,24 @@ jobs:
                       print(endpoints[0].rstrip('/'))
                       exit()
 
-          # Fallback: CloudFormation template
+          # Fallback: CloudFormation template (Outputs may be dict or list)
           for f in glob.glob('.serverless/cloudformation-template-*.json'):
               with open(f) as fh:
                   tmpl = json.load(fh)
-                  outputs = tmpl.get('Outputs', [])
-                  for o in outputs:
-                      if o['OutputKey'] == 'ServiceEndpoint':
-                          print(o['OutputValue'].rstrip('/'))
-                          exit()
+                  outputs = tmpl.get('Outputs', {})
+                  if isinstance(outputs, dict):
+                      for key, val in outputs.items():
+                          if 'ServiceEndpoint' in key and isinstance(val, str):
+                              print(val.rstrip('/'))
+                              exit()
+                          if isinstance(val, dict) and 'Value' in val:
+                              print(val['Value'].rstrip('/'))
+                              exit()
+                  elif isinstance(outputs, list):
+                      for o in outputs:
+                          if isinstance(o, dict) and o.get('OutputKey') == 'ServiceEndpoint':
+                              print(o['OutputValue'].rstrip('/'))
+                              exit()
 
           print('ERROR: endpoint not found', file=os.sys.stderr)
           os.sys.exit(1)
