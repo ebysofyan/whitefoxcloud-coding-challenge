@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from mangum import Mangum
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from src.core.exceptions import (
     BookNotFoundError,
@@ -32,6 +33,27 @@ app = FastAPI(
     redoc_url=None if _is_prod else "/redoc",
     openapi_url=None if _is_prod else "/openapi.json",
 )
+
+
+class RootPathMiddleware:
+    """Set root_path from API Gateway stage so Swagger resolves URLs correctly."""
+
+    def __init__(self, inner: ASGIApp) -> None:
+        self.inner = inner
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") == "http" and not scope.get("root_path"):
+            path = scope.get("path", "")
+            headers = dict(scope.get("headers", []))
+            host = headers.get(b"host", b"").decode()
+            if "execute-api" in host:
+                parts = path.strip("/").split("/")
+                if parts and parts[0] in ("dev", "prod", "staging"):
+                    scope["root_path"] = f"/{parts[0]}"
+        await self.inner(scope, receive, send)
+
+
+app.add_middleware(RootPathMiddleware)
 
 # CORS middleware (Spec §10)
 # NOTE: allow_origins=["*"] is intentional for this coding challenge.

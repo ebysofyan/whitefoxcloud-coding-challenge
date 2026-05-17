@@ -82,6 +82,28 @@ functions:
               - X-Amz-Date
               - X-Amz-Security-Token
             allowCredentials: false
+      - http:
+          path: /docs
+          method: GET
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Amz-Security-Token
+            allowCredentials: false
+      - http:
+          path: /openapi.json
+          method: GET
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Amz-Security-Token
+            allowCredentials: false
 
 resources:
   Resources:
