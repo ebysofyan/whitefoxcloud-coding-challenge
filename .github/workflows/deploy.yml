@@ -59,47 +59,11 @@ jobs:
 
       - name: Verify API health
         run: |
-          # Get API URL from serverless state file
-          API_URL=$(python3 -c "
-          import json, os, glob
-
-          # Try serverless-state.json first
-          if os.path.exists('.serverless/serverless-state.json'):
-              state = json.load(open('.serverless/serverless-state.json'))
-              outputs = state.get('service', {}).get('outputs', {})
-              if 'endpoints' in outputs:
-                  endpoints = outputs['endpoints']
-                  if isinstance(endpoints, dict):
-                      for v in endpoints.values():
-                          if isinstance(v, str) and v.startswith('http'):
-                              print(v.rstrip('/'))
-                              exit()
-                  elif isinstance(endpoints, list) and endpoints:
-                      print(endpoints[0].rstrip('/'))
-                      exit()
-
-          # Fallback: CloudFormation template (Outputs may be dict or list)
-          for f in glob.glob('.serverless/cloudformation-template-*.json'):
-              with open(f) as fh:
-                  tmpl = json.load(fh)
-                  outputs = tmpl.get('Outputs', {})
-                  if isinstance(outputs, dict):
-                      for key, val in outputs.items():
-                          if 'ServiceEndpoint' in key and isinstance(val, str):
-                              print(val.rstrip('/'))
-                              exit()
-                          if isinstance(val, dict) and 'Value' in val:
-                              print(val['Value'].rstrip('/'))
-                              exit()
-                  elif isinstance(outputs, list):
-                      for o in outputs:
-                          if isinstance(o, dict) and o.get('OutputKey') == 'ServiceEndpoint':
-                              print(o['OutputValue'].rstrip('/'))
-                              exit()
-
-          print('ERROR: endpoint not found', file=os.sys.stderr)
-          os.sys.exit(1)
-          ")
+          API_URL=$(serverless info 2>&1 | grep -oP 'https://[a-z0-9]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com' | head -1)
+          if [ -z "$API_URL" ]; then
+            echo "::error::Failed to extract API URL from serverless info"
+            exit 1
+          fi
           echo "API_URL=$API_URL"
 
           # Debug: check secrets are set
