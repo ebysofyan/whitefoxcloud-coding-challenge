@@ -66,7 +66,6 @@ class BookService:
           - next_cursor: LEK of this page (None at end of data)
           - prev_cursor: echo of incoming cursor (one-step back)
           - has_next / has_prev: convenience flags
-          - total: table item count (eventually consistent; from table metadata)
         """
         scan_kwargs: dict[str, Any] = {"Limit": limit}
         start_key = _decode_cursor(cursor)
@@ -82,7 +81,6 @@ class BookService:
             prev_cursor=cursor,
             has_next=next_cursor is not None,
             has_prev=cursor is not None,
-            total=self.table.item_count,
         )
 
     def delete_book(self, book_id: str) -> None:

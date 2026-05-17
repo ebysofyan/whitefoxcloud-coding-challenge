@@ -480,7 +480,7 @@
       }
 
       clearStatus(statusEl);
-      const { items = [], next_cursor, has_next, has_prev, total } = res.data;
+      const { items = [], next_cursor, has_next, has_prev } = res.data;
       nextCursor = next_cursor || null;
 
       // Render list (or empty state).
@@ -499,7 +499,7 @@
 
       btnPrev.disabled = !has_prev;
       btnNext.disabled = !has_next;
-      pageInfo.textContent = `${items.length} shown · ${total} total`;
+      pageInfo.textContent = `${items.length} shown`;
     }
 
     // biome-ignore lint/correctness/noUnusedVariables: used in inline onclick handler
