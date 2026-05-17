@@ -9,7 +9,6 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse
 from mangum import Mangum
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp, Receive, Scope, Send
 
 from src.core.exceptions import (
     BookNotFoundError,
@@ -30,31 +29,10 @@ _is_prod = _env in ("prod", "staging")
 app = FastAPI(
     title="Books API",
     version="0.1.0",
-    docs_url=None if _is_prod else "/__docs_internal__",
+    docs_url=None if _is_prod else "/docs",
     redoc_url=None if _is_prod else "/redoc",
     openapi_url=None if _is_prod else "/openapi.json",
 )
-
-
-class RootPathMiddleware:
-    """Set root_path from API Gateway stage so Swagger resolves URLs correctly."""
-
-    def __init__(self, inner: ASGIApp) -> None:
-        self.inner = inner
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope.get("type") == "http" and not scope.get("root_path"):
-            path = scope.get("path", "")
-            headers = dict(scope.get("headers", []))
-            host = headers.get(b"host", b"").decode()
-            if "execute-api" in host:
-                parts = path.strip("/").split("/")
-                if parts and parts[0] in ("dev", "prod", "staging"):
-                    scope["root_path"] = f"/{parts[0]}"
-        await self.inner(scope, receive, send)
-
-
-app.add_middleware(RootPathMiddleware)
 
 # CORS middleware (Spec §10)
 # NOTE: allow_origins=["*"] is intentional for this coding challenge.
@@ -77,10 +55,15 @@ STATIC_DIR = Path(__file__).parent.parent / "static"
 
 @app.get("/docs", response_class=HTMLResponse)
 async def docs(request: Request) -> HTMLResponse:
-    """Swagger UI with stage-aware openapi.json URL."""
-    root = request.scope.get("root_path", "")
+    headers = dict(request.scope.get("headers", []))
+    host = headers.get(b"host", b"").decode()
+    if "execute-api" in host:
+        stage = os.getenv("ENVIRONMENT", "dev")
+        openapi_url = f"/{stage}/openapi.json"
+    else:
+        openapi_url = "/openapi.json"
     return get_swagger_ui_html(
-        openapi_url=f"{root}/openapi.json",
+        openapi_url=openapi_url,
         title="Books API - Swagger UI",
     )
 
