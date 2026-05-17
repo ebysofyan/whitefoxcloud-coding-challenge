@@ -59,7 +59,7 @@ jobs:
 
       - name: Verify API health
         run: |
-          # Extract API Gateway URL from serverless state (no fragile grep)
+          # Extract API Gateway URL from serverless state
           API_URL=$(python3 -c "
           import json, glob, os
           for f in glob.glob('.serverless/cloudformation-template-update-stack-*.json'):
@@ -75,25 +75,34 @@ jobs:
           ")
           echo "API_URL=$API_URL"
 
-          # Login — response masked in logs
-          set +x
-          LOGIN_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${API_URL}/api/auth/login" \
-            -H "Content-Type: application/json" \
-            -d "{\"username\": \"${{ secrets.API_TEST_USERNAME }}\", \"password\": \"${{ secrets.API_TEST_PASSWORD }}\"}")
-          HTTP_CODE=$(echo "$LOGIN_RESPONSE" | tail -1)
-          LOGIN_BODY=$(echo "$LOGIN_RESPONSE" | sed '$d')
-
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "::error::Login failed with HTTP $HTTP_CODE"
-            echo "Response: $LOGIN_BODY"
+          # Debug: check secrets are set
+          if [ -z "${{ secrets.API_TEST_USERNAME }}" ]; then
+            echo "::error::API_TEST_USERNAME secret is empty or not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.API_TEST_PASSWORD }}" ]; then
+            echo "::error::API_TEST_PASSWORD secret is empty or not set"
             exit 1
           fi
 
-          TOKEN=$(echo "$LOGIN_BODY" | python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
+          # Login
+          LOGIN_HTTP_CODE=$(curl -s -o /tmp/login.json -w "%{http_code}" -X POST "${API_URL}/api/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"username\": \"${{ secrets.API_TEST_USERNAME }}\", \"password\": \"${{ secrets.API_TEST_PASSWORD }}\"}")
+          echo "Login HTTP: $LOGIN_HTTP_CODE"
 
-          # Verify authenticated endpoint — no response body in logs
+          if [ "$LOGIN_HTTP_CODE" != "200" ]; then
+            echo "::error::Login failed with HTTP $LOGIN_HTTP_CODE"
+            cat /tmp/login.json
+            exit 1
+          fi
+
+          TOKEN=$(python3 -c "import json; print(json.load(open('/tmp/login.json'))['access_token'])")
+
+          # Verify authenticated endpoint
           BOOKS_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}/api/books" \
             -H "Authorization: Bearer $TOKEN")
+          echo "Books HTTP: $BOOKS_HTTP_CODE"
 
           if [ "$BOOKS_HTTP_CODE" != "200" ]; then
             echo "::error::Books endpoint returned HTTP $BOOKS_HTTP_CODE"
@@ -101,4 +110,3 @@ jobs:
           fi
 
           echo "API health check passed (login: 200, books: 200)"
-          set -x
