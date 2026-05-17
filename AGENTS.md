@@ -1,24 +1,29 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-05-17 12:00 UTC
-**Commit:** b9ab279
-**Branch:** main
+**Generated:** 2026-05-17 14:30 UTC
+**Commit:** 78a46b4
+**Branch:** dev
 
 ## OVERVIEW
-FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev via `uv run fastapi dev`, prod via Serverless Framework → AWS Lambda (Mangum adapter). SPA frontend served at root.
+FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev via `uv run fastapi dev`, prod via Serverless Framework → AWS Lambda (Mangum adapter). SPA frontend served at root. Rate limiting middleware added.
 
 ## STRUCTURE
 ```
 ├── src/                    # Application package (src-layout)
 │   ├── main.py            # FastAPI app + Mangum handler ← ENTRY POINT
 │   ├── config.py          # Pydantic Settings + TableConfig (env-driven table naming)
-│   ├── models.py          # Pydantic v2 request/response schemas
-│   ├── exceptions.py      # Custom exception hierarchy
-│   ├── auth.py            # Token store + FastAPI dependency
-│   ├── aws.py             # DynamoDB resource factory
+│   ├── core/              # Cross-cutting infrastructure
+│   │   ├── exceptions.py  # Custom exception hierarchy (BookAPIError base)
+│   │   └── aws.py         # DynamoDB resource factory
+│   ├── auth/              # Authentication package
+│   │   └── token_store.py # TokenStore + FastAPI dependency
+│   ├── schemas/           # Pydantic v2 request/response schemas
+│   ├── middleware/        # ASGI middleware
+│   │   ├── rate_limit.py  # Rate limit middleware dispatch
+│   │   └── rate_limiter.py# Sliding window rate limiter
 │   ├── routes/            # FastAPI APIRouter modules
 │   └── services/          # Business logic + DynamoDB access
-├── tests/                  # Mirrors src/ structure, 60 tests, 99% coverage
+├── tests/                  # Mirrors src/ structure, 60+ tests, 99% coverage
 ├── static/index.html       # SPA frontend (served at /)
 ├── scripts/init_db.py      # DynamoDB table bootstrap
 ├── serverless.yml          # AWS infra-as-code (Lambda + API Gateway + DynamoDB)
@@ -35,9 +40,12 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 |------|----------|-------|
 | Add endpoint | `src/routes/` + register in `src/main.py` | Thin controller, delegate to services |
 | Add business logic | `src/services/` | DynamoDB access, cursor pagination |
-| Add schema | `src/models.py` | Pydantic v2 BaseModel |
+| Add schema | `src/schemas/` | Pydantic v2 BaseModel, split by domain |
+| Add exception | `src/core/exceptions.py` | Subclass BookAPIError, add handler in main.py |
 | Add config | `src/config.py` | Pydantic BaseSettings, env vars |
 | Add test | Mirror path in `tests/` | Use moto for AWS, not unittest.mock |
+| Add middleware | `src/middleware/` | ASGI middleware, register in main.py |
+| Add auth logic | `src/auth/token_store.py` | Token management, FastAPI dependency |
 | Change deployment | `serverless.yml` | Lambda runtime, IAM, API Gateway, CORS |
 | Change lint rules | `pyproject.toml` [tool.ruff] | E, F, I, UP, B, SIM enabled |
 
@@ -49,13 +57,17 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 | `handler` | Mangum | `src/main.py:116` | Lambda entry point |
 | `Settings` | BaseSettings | `src/config.py` | ENVIRONMENT (auto-prefixes tables), DYNAMODB_ENDPOINT, AWS_REGION |
 | `TableConfig` | BaseModel | `src/config.py` | Table base names, env-driven prefixing |
-| `TokenStore` | class | `src/auth.py` | In-memory token store, hardcoded creds (admin/admin123) |
-| `get_current_user` | FastAPI Depends | `src/auth.py` | Auth dependency, extracts Bearer token |
+| `TokenStore` | class | `src/auth/token_store.py` | In-memory token store, hardcoded creds (admin/admin123) |
+| `get_current_user` | FastAPI Depends | `src/auth/token_store.py` | Auth dependency, extracts Bearer token |
 | `BookService` | class | `src/services/book_service.py` | DynamoDB CRUD, cursor pagination via base64 LEK |
-| `get_dynamodb_resource` | function | `src/aws.py` | Factory for DynamoDB resource with endpoint handling |
-| `BookNotFoundError` | Exception | `src/exceptions.py` | → 404 |
-| `NotAuthenticatedError` | Exception | `src/exceptions.py` | → 401 |
-| `InvalidCursorError` | Exception | `src/exceptions.py` | → 400 |
+| `get_dynamodb_resource` | function | `src/core/aws.py` | Factory for DynamoDB resource with endpoint handling |
+| `BookAPIError` | Exception | `src/core/exceptions.py` | Base exception for all API errors |
+| `BookNotFoundError` | Exception | `src/core/exceptions.py` | → 404 |
+| `NotAuthenticatedError` | Exception | `src/core/exceptions.py` | → 401 |
+| `InvalidCursorError` | Exception | `src/core/exceptions.py` | → 400 |
+| `RateLimitExceededError` | Exception | `src/core/exceptions.py` | → 429 |
+| `RateLimiter` | class | `src/middleware/rate_limiter.py` | Sliding window rate limiter, async-safe |
+| `rate_limit_middleware` | function | `src/middleware/rate_limit.py` | ASGI middleware dispatch |
 
 ## CONVENTIONS
 - **Python 3.14** — bleeding edge, released Oct 2025
@@ -66,6 +78,7 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 - **Service layer** — LRU-cached singleton in routes (`@lru_cache`)
 - **Cursor pagination** — base64-encoded DynamoDB LastEvaluatedKey
 - **Table naming** — `ENVIRONMENT` env var auto-prefixes: `{env}-books`, `{env}-users`
+- **Rate limiting** — sliding window, separate limits for login (5/min) and API (60/min)
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - Never use `unittest.mock` / `MagicMock` for AWS — use `moto` via `dynamodb_table` fixture
@@ -73,6 +86,8 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 - Never modify `requirements.txt` manually — it's generated from `pyproject.toml` for Lambda bundle
 - Never set `DYNAMODB_ENDPOINT` in production `.env` — unset means real AWS endpoint
 - Never add type error suppression (`# type: ignore`) — no mypy configured anyway
+- Never put business logic in routes — delegate to services
+- Never bypass `core/aws.py` factory — it handles endpoint URL logic for local vs cloud
 
 ## UNIQUE STYLES
 - `package.json` `"main": "index.js"` is a dead reference — no JS entry exists, file only for serverless plugin
@@ -80,6 +95,8 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 - `deps/` directory at root — Lambda dependency bundle, gitignored, created by `make deps`
 - Pre-commit hooks run ruff in 3 steps: lint --fix, import sort, format
 - CORS explicitly allows `Authorization` header for SPA auth
+- Exception hierarchy: `BookAPIError` base → specific subclasses → HTTP status mapping in `main.py`
+- Rate limiter: async-safe via `asyncio.Lock`, max 10k keys, sliding window
 
 ## COMMANDS
 ```bash
@@ -107,3 +124,4 @@ make clean        # rm -rf deps/ .serverless/ .pytest_cache/ .ruff_cache/ .cover
 - Serverless Framework v4, region ap-southeast-1 (Singapore)
 - Lambda layer bundles deps/ with PYTHONPATH=/var/task/deps, strips boto3/botocore (provided by runtime)
 - SPA at `static/index.html` requires CORS `Authorization` header for browser auth
+- Rate limits: login 5 req/min, API 60 req/min, non-API paths exempt
