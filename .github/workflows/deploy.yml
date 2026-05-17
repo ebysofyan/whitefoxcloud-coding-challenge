@@ -94,7 +94,7 @@ jobs:
             exit 1
           fi
 
-          TOKEN=$(python3 -c "import json; print(json.load(open('/tmp/login.json'))['access_token'])")
+          TOKEN=$(python3 -c "import json; print(json.load(open('/tmp/login.json'))['token'])")
 
           # Verify authenticated endpoint
           BOOKS_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}/api/books" \
