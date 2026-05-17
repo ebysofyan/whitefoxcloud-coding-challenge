@@ -3,10 +3,10 @@ import json
 from typing import Any
 from uuid import uuid4
 
-from src.aws import get_dynamodb_resource
 from src.config import settings
-from src.exceptions import BookNotFoundError, InvalidCursorError
-from src.models import BookCreate, BookListResponse, BookResponse
+from src.core.aws import get_dynamodb_resource
+from src.core.exceptions import BookNotFoundError, InvalidCursorError
+from src.schemas import BookCreate, BookListResponse, BookResponse
 
 
 def _encode_cursor(key: dict[str, Any] | None) -> str | None:

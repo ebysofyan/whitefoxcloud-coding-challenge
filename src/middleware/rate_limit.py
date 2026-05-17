@@ -1,8 +1,8 @@
 from starlette.requests import Request
 
 from src.config import settings
-from src.exceptions import RateLimitExceededError
-from src.rate_limiter import RateLimiter
+from src.core.exceptions import RateLimitExceededError
+from src.middleware.rate_limiter import RateLimiter
 
 # Rate limit configs
 _LOGIN_LIMIT = RateLimiter(max_requests=5, window_seconds=60.0)

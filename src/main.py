@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from mangum import Mangum
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.exceptions import (
+from src.core.exceptions import (
     BookNotFoundError,
     InvalidCursorError,
     NotAuthenticatedError,

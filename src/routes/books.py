@@ -3,8 +3,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Path, Query
 
-from src.auth import get_current_user
-from src.models import BookCreate, BookListResponse, BookResponse
+from src.auth.token_store import get_current_user
+from src.schemas import BookCreate, BookListResponse, BookResponse
 from src.services.book_service import BookService
 
 router = APIRouter(prefix="/api/books", tags=["books"])

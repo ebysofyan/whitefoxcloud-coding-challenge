@@ -3,8 +3,8 @@ import time
 
 import pytest
 
-from src.auth import TokenStore, authenticate, get_current_user
-from src.exceptions import NotAuthenticatedError
+from src.auth.token_store import TokenStore, authenticate, get_current_user
+from src.core.exceptions import NotAuthenticatedError
 
 
 def test_token_store_create_token():

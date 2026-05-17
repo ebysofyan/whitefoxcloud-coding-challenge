@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from src.exceptions import NotAuthenticatedError
+from src.core.exceptions import NotAuthenticatedError
 from src.main import app
 
 

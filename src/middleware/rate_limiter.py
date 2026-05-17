@@ -4,7 +4,6 @@ import time
 
 class RateLimiter:
     """Sliding window rate limiter.
-
     Tracks request timestamps per key and prunes expired entries.
     Async-safe via a single asyncio.Lock.
     Evicts oldest key when max_keys cap is reached.
@@ -27,20 +26,15 @@ class RateLimiter:
         async with self._lock:
             now = time.time()
             window_start = now - self._window_seconds
-
             self._prune_expired(now, window_start)
-
             timestamps = self._requests.get(key, [])
             timestamps = [ts for ts in timestamps if ts > window_start]
-
             if len(timestamps) >= self._max_requests:
                 self._requests[key] = timestamps
                 return False
-
             if key not in self._requests and len(self._requests) >= self._max_keys:
                 oldest_key = min(self._requests, key=lambda k: min(self._requests[k]))
                 del self._requests[oldest_key]
-
             timestamps.append(now)
             self._requests[key] = timestamps
             return True
@@ -52,10 +46,8 @@ class RateLimiter:
             window_start = now - self._window_seconds
             timestamps = self._requests.get(key, [])
             timestamps = [ts for ts in timestamps if ts > window_start]
-
             if len(timestamps) < self._max_requests:
                 return 0.0
-
             oldest = timestamps[0]
             retry_after = oldest + self._window_seconds - now
             return max(0.0, retry_after)
