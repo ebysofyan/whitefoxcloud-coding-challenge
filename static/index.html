@@ -264,24 +264,25 @@
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <h2>Welcome, <span id="user-display">admin</span></h2>
-          <button class="secondary small" onclick="logout()">Logout</button>
+          <button type="button" class="secondary small" onclick="logout()">Logout</button>
         </div>
         <p id="token-display"></p>
       </div>
       <div class="nav">
-        <button class="active" onclick="showView('list')" id="btn-list">Books</button>
-        <button onclick="showView('create')" id="btn-create">Create</button>
+        <button type="button" class="active" onclick="showView('list')" id="btn-list">Books</button>
+        <button type="button" onclick="showView('create')" id="btn-create">Create</button>
       </div>
       <div id="view-list" class="card">
         <h2>All Books</h2>
-        <button onclick="resetAndRefresh()" class="secondary small" style="margin-bottom:1rem;">Refresh</button>
+        <button type="button" onclick="resetAndRefresh()" class="secondary small"
+          style="margin-bottom:1rem;">Refresh</button>
         <div id="books-container">
           <div class="empty-state">No books yet. Create one!</div>
         </div>
         <div class="pagination">
-          <button id="btn-prev" class="secondary small" disabled onclick="prevPage()">&larr; Prev</button>
+          <button type="button" id="btn-prev" class="secondary small" disabled onclick="prevPage()">&larr; Prev</button>
           <span class="page-info" id="page-info"></span>
-          <button id="btn-next" class="secondary small" disabled onclick="nextPage()">Next &rarr;</button>
+          <button type="button" id="btn-next" class="secondary small" disabled onclick="nextPage()">Next &rarr;</button>
         </div>
         <div id="list-status" class="status" aria-live="polite"></div>
       </div>
@@ -305,10 +306,11 @@
       </div>
       <div id="view-detail" class="card hidden">
         <h2>Book Detail</h2>
-        <button onclick="showView('list')" class="secondary small" style="margin-bottom:1rem;">&larr; Back</button>
+        <button type="button" onclick="showView('list')" class="secondary small" style="margin-bottom:1rem;">&larr;
+          Back</button>
         <pre id="detail-result"></pre>
         <div style="margin-top:1rem;">
-          <button class="danger" onclick="deleteCurrentBook()">Delete Book</button>
+          <button type="button" class="danger" onclick="deleteCurrentBook()">Delete Book</button>
         </div>
         <div id="detail-status" class="status" aria-live="polite"></div>
       </div>
@@ -336,11 +338,11 @@
     function clearStatus(el) { setStatus(el, '', null); }
 
     function errorDetail(data, fallback) {
-      const d = data && data.detail;
+      const d = data?.detail;
       if (typeof d === 'string') return d;
       if (Array.isArray(d) && d.length) {
         const first = d[0];
-        if (first && first.msg) {
+        if (first?.msg) {
           const loc = Array.isArray(first.loc) ? first.loc.join('.') : '';
           return loc ? `${loc}: ${first.msg}` : first.msg;
         }
@@ -358,7 +360,7 @@
         method,
         headers: { 'Content-Type': 'application/json' },
       };
-      if (token) opts.headers.Authorization = 'Bearer ' + token;
+      if (token) opts.headers.Authorization = `Bearer ${token}`;
       if (body) opts.body = JSON.stringify(body);
       const res = await fetch(API + path, opts);
       const data = await res.json().catch(() => ({}));
@@ -377,10 +379,10 @@
     }
 
     function showView(view) {
-      document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
-      document.getElementById('view-' + view).classList.remove('hidden');
-      document.querySelectorAll('.nav button').forEach(btn => btn.classList.remove('active'));
-      document.getElementById('btn-' + (view === 'detail' ? 'list' : view)).classList.add('active');
+      document.querySelectorAll('[id^="view-"]').forEach(el => { el.classList.add('hidden'); });
+      document.getElementById(`view-${view}`).classList.remove('hidden');
+      document.querySelectorAll('.nav button').forEach(btn => { btn.classList.remove('active'); });
+      document.getElementById(`btn-${view === 'detail' ? 'list' : view}`).classList.add('active');
       // Clear stale statuses on view change.
       ['list-status', 'create-status', 'detail-status'].forEach(id => {
         const el = document.getElementById(id);
@@ -405,7 +407,7 @@
         token = res.data.token;
         localStorage.setItem('books_api_token', token);
         showStatus(statusEl, 'Login successful', false);
-        document.getElementById('token-display').textContent = 'Token: ' + token;
+        document.getElementById('token-display').textContent = `Token: ${token}`;
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('app-section').classList.remove('hidden');
         showView('list');
@@ -414,6 +416,7 @@
       }
     }
 
+    // biome-ignore lint/correctness/noUnusedVariables: used in inline onclick handler
     function logout() {
       token = null;
       localStorage.removeItem('books_api_token');
@@ -443,7 +446,7 @@
       const del = document.createElement('button');
       del.className = 'danger small';
       del.textContent = 'Delete';
-      del.setAttribute('aria-label', 'Delete book ' + book.id);
+      del.setAttribute('aria-label', `Delete book ${book.id}`);
       del.addEventListener('click', (e) => {
         e.stopPropagation();
         deleteBook(book.id);
@@ -468,10 +471,10 @@
 
       const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
       if (currentCursor) params.set('cursor', currentCursor);
-      const res = await request('GET', '/api/books?' + params.toString());
+      const res = await request('GET', `/api/books?${params.toString()}`);
 
       if (!res.ok) {
-        showStatus(statusEl, 'Error ' + res.status + ': ' + errorDetail(res.data), true);
+        showStatus(statusEl, `Error ${res.status}: ${errorDetail(res.data)}`, true);
         pageInfo.textContent = '';
         return;
       }
@@ -490,7 +493,7 @@
       } else {
         const ul = document.createElement('ul');
         ul.className = 'book-list';
-        items.forEach(book => ul.appendChild(renderBook(book)));
+        items.forEach(book => { ul.appendChild(renderBook(book)); });
         container.appendChild(ul);
       }
 
@@ -499,12 +502,14 @@
       pageInfo.textContent = `${items.length} shown · ${total} total`;
     }
 
+    // biome-ignore lint/correctness/noUnusedVariables: used in inline onclick handler
     function nextPage() {
       if (!nextCursor) return;
       currentCursor = nextCursor;
       refreshBooks();
     }
 
+    // biome-ignore lint/correctness/noUnusedVariables: used in inline onclick handler
     function prevPage() {
       // Server returns prev_cursor = echo of the cursor that fetched this page.
       // To go back one step, drop currentCursor (revisit the page that came before).
@@ -516,25 +521,26 @@
 
     async function showBookDetail(bookId) {
       currentBookId = bookId;
-      const res = await request('GET', '/api/books/' + encodeURIComponent(bookId));
+      const res = await request('GET', `/api/books/${encodeURIComponent(bookId)}`);
       if (res.ok) {
         document.getElementById('detail-result').textContent = JSON.stringify(res.data, null, 2);
         showView('detail');
       } else {
-        showStatus(document.getElementById('detail-status'), 'Error: ' + errorDetail(res.data), true);
+        showStatus(document.getElementById('detail-status'), `Error: ${errorDetail(res.data)}`, true);
       }
     }
 
     async function deleteBook(bookId) {
-      if (!confirm('Delete book ' + bookId + '?')) return;
-      const res = await request('DELETE', '/api/books/' + encodeURIComponent(bookId));
+      if (!confirm(`Delete book ${bookId}?`)) return;
+      const res = await request('DELETE', `/api/books/${encodeURIComponent(bookId)}`);
       if (res.ok || res.status === 204) {
         refreshBooks();
       } else {
-        showStatus(document.getElementById('list-status'), 'Error: ' + errorDetail(res.data), true);
+        showStatus(document.getElementById('list-status'), `Error: ${errorDetail(res.data)}`, true);
       }
     }
 
+    // biome-ignore lint/correctness/noUnusedVariables: used in inline onclick handler
     async function deleteCurrentBook() {
       if (!currentBookId) return;
       await deleteBook(currentBookId);
@@ -565,14 +571,14 @@
         showResult(resultEl, res.data);
         document.getElementById('create-form').reset();
       } else {
-        showStatus(statusEl, 'Error ' + res.status + ': ' + errorDetail(res.data), true);
+        showStatus(statusEl, `Error ${res.status}: ${errorDetail(res.data)}`, true);
       }
     });
 
     if (token) {
       document.getElementById('login-section').classList.add('hidden');
       document.getElementById('app-section').classList.remove('hidden');
-      document.getElementById('token-display').textContent = 'Token: ' + token;
+      document.getElementById('token-display').textContent = `Token: ${token}`;
       showView('list');
     }
   </script>

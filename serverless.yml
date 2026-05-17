@@ -56,7 +56,7 @@ provider:
           Resource:
             - Fn::GetAtt: [BooksTable, Arn]
 
-  functions:
+functions:
   api:
     handler: src.main.handler
     events:
