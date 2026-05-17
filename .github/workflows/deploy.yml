@@ -59,7 +59,7 @@ jobs:
 
       - name: Verify API health
         run: |
-          API_URL=$(serverless info 2>&1 | grep -oP 'https://[a-z0-9]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com' | head -1)
+          API_URL=$(serverless info 2>&1 | grep -oP 'https://[^\s]+' | grep 'execute-api' | head -1 | sed 's|/[^/]*$||')
           if [ -z "$API_URL" ]; then
             echo "::error::Failed to extract API URL from serverless info"
             exit 1
