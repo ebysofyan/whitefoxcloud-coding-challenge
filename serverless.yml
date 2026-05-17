@@ -71,9 +71,6 @@ functions:
               - X-Amz-Date
               - X-Amz-Security-Token
             allowCredentials: false
-          throttle:
-            burst: 100
-            rate: 50
       - http:
           path: /
           method: GET
@@ -109,6 +106,19 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
+
+    ApiUsagePlan:
+      Type: AWS::ApiGateway::UsagePlan
+      Properties:
+        UsagePlanName: ${self:service}-${self:provider.stage}-usage-plan
+        Description: Throttling usage plan for Books API
+        Throttle:
+          BurstLimit: 100
+          RateLimit: 50
+        ApiStages:
+          - ApiId:
+              Ref: ApiGatewayRestApi
+            Stage: ${self:provider.stage}
 
 custom:
   tableName: ${opt:stage, 'dev'}-books
