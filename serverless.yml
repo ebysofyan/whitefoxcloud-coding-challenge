@@ -56,7 +56,7 @@ provider:
           Resource:
             - Fn::GetAtt: [BooksTable, Arn]
 
-functions:
+  functions:
   api:
     handler: src.main.handler
     events:
@@ -71,6 +71,9 @@ functions:
               - X-Amz-Date
               - X-Amz-Security-Token
             allowCredentials: false
+          throttle:
+            burst: 100
+            rate: 50
       - http:
           path: /
           method: GET

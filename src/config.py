@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     aws_region: str = "ap-southeast-1"
     environment: str = "dev"
     dynamodb_endpoint: str | None = None
+    trust_proxy_headers: bool = False
     tables: TableConfig = TableConfig()
 
     @property
