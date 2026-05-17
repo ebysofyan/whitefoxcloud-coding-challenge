@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.models import BookCreate, LoginRequest, LoginResponse
+from src.schemas import BookCreate, LoginRequest, LoginResponse
 
 
 def test_book_create_valid():

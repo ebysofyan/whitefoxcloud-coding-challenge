@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from src.rate_limiter import RateLimiter
+from src.middleware.rate_limiter import RateLimiter
 
 
 def test_is_allowed_under_limit():

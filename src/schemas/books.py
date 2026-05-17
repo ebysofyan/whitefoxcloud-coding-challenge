@@ -1,15 +1,6 @@
 from pydantic import BaseModel, Field
 
 
-class LoginRequest(BaseModel):
-    username: str = Field(min_length=1)
-    password: str = Field(min_length=1)
-
-
-class LoginResponse(BaseModel):
-    token: str
-
-
 class BookCreate(BaseModel):
     id: str | None = None
     author: str = Field(min_length=1)
@@ -28,7 +19,6 @@ class BookResponse(BaseModel):
 
 class BookListResponse(BaseModel):
     """Paginated list response.
-
     Cursors are opaque, base64-encoded JSON of DynamoDB's LastEvaluatedKey.
     `prev_cursor` is an echo of the request's incoming cursor (one-step back).
     """

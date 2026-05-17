@@ -1,4 +1,8 @@
-from src.exceptions import BookNotFoundError, InvalidCursorError, NotAuthenticatedError
+from src.core.exceptions import (
+    BookNotFoundError,
+    InvalidCursorError,
+    NotAuthenticatedError,
+)
 
 
 def test_book_not_found_error():

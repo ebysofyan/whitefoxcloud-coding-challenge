@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 from moto import mock_aws
 
-from src.auth import token_store
+from src.auth.token_store import token_store
 from src.config import settings
 from src.main import app
 from src.routes.books import get_book_service

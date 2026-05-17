@@ -149,9 +149,17 @@ Open `http://localhost:9876` in a browser for a single-page client that supports
 ├── src/
 │   ├── main.py              # FastAPI app + Lambda handler (mangum)
 │   ├── config.py            # Pydantic settings
-│   ├── models.py            # Request/response schemas
-│   ├── exceptions.py        # Custom exception classes
-│   ├── auth.py              # Token-based authentication
+│   ├── core/
+│   │   ├── exceptions.py    # Custom exception classes
+│   │   └── aws.py           # DynamoDB resource factory
+│   ├── auth/
+│   │   └── token_store.py   # Token-based authentication
+│   ├── schemas/
+│   │   ├── auth.py          # Auth-related schemas
+│   │   └── books.py         # Book-related schemas
+│   ├── middleware/
+│   │   ├── rate_limit.py    # Rate limit middleware
+│   │   └── rate_limiter.py  # RateLimiter implementation
 │   ├── routes/
 │   │   ├── auth.py          # Login endpoint
 │   │   └── books.py         # Book CRUD endpoints

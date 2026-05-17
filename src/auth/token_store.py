@@ -3,7 +3,7 @@ import time
 
 from fastapi import Header
 
-from src.exceptions import NotAuthenticatedError
+from src.core.exceptions import NotAuthenticatedError
 
 DEFAULT_TOKEN_TTL = 86_400
 
@@ -42,7 +42,6 @@ class TokenStore:
 
 
 token_store = TokenStore()
-
 VALID_USERS = {"admin": "admin123"}
 
 
@@ -59,14 +58,11 @@ async def get_current_user(
     """FastAPI dependency to validate current user from Authorization header."""
     if authorization is None:
         raise NotAuthenticatedError("Missing authorization header")
-
     parts = authorization.split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
         raise NotAuthenticatedError("Invalid authorization format. Use: Bearer <token>")
-
     token = parts[1]
     username = token_store.validate_token(token)
     if username is None:
         raise NotAuthenticatedError("Invalid or expired token")
-
     return username

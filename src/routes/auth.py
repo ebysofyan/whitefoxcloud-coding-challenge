@@ -2,9 +2,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body
 
-from src.auth import authenticate
-from src.exceptions import NotAuthenticatedError
-from src.models import LoginRequest, LoginResponse
+from src.auth.token_store import authenticate
+from src.core.exceptions import NotAuthenticatedError
+from src.schemas import LoginRequest, LoginResponse
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 

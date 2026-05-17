@@ -3,14 +3,14 @@ import asyncio
 import pytest
 
 from src.config import settings
-from src.exceptions import RateLimitExceededError
+from src.core.exceptions import RateLimitExceededError
 from src.middleware import rate_limit as rl_module
 from src.middleware.rate_limit import (
     _extract_client_ip,
     _get_limiter_for_path,
     rate_limit_middleware,
 )
-from src.rate_limiter import RateLimiter
+from src.middleware.rate_limiter import RateLimiter
 
 
 @pytest.fixture(autouse=True)
