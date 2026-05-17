@@ -30,7 +30,9 @@ _is_prod = _env in ("prod", "staging")
 app = FastAPI(
     title="Books API",
     version="0.1.0",
-    docs_url=None if _is_prod else "/docs",
+    # Custom /docs handler below handles stage-prefix for API Gateway.
+    # Built-in docs_url is always disabled to avoid route conflict.
+    docs_url=None,
     redoc_url=None if _is_prod else "/redoc",
     openapi_url=None if _is_prod else "/openapi.json",
 )
