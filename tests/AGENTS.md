@@ -1,6 +1,6 @@
 # tests/ — Test Suite
 
-**Score:** 21 (distinct test domain, 55 tests, 100% coverage)
+**Score:** 21 (distinct test domain, 60 tests, 99% coverage)
 
 ## OVERVIEW
 pytest test suite mirroring src/ structure — unit, route, service, and integration tests.
@@ -11,7 +11,7 @@ tests/
 ├── __init__.py
 ├── conftest.py           # Shared fixtures (client, aws_mock, dynamodb_table, auth_token)
 ├── test_auth.py          # TokenStore, authenticate, get_current_user (9 tests)
-├── test_config.py        # Settings defaults with env isolation (1 test)
+├── test_config.py        # Settings defaults + TableConfig + env isolation (4 tests)
 ├── test_exceptions.py    # Custom exception messages (5 tests)
 ├── test_main.py          # CORS, static serving, health, error handlers (6 tests)
 ├── test_models.py        # Pydantic model validation (4 tests)
@@ -19,9 +19,9 @@ tests/
 │   ├── __init__.py
 │   ├── test_auth.py      # Login endpoint tests (3 tests)
 │   └── test_books.py     # Book CRUD via TestClient (14 tests)
-├── test_services/        # Service-layer unit tests
+├── test_services/        # Service-level unit tests
 │   ├── __init__.py
-│   └── test_book_service.py  # DynamoDB CRUD, cursor pagination (11 tests)
+│   └── test_book_service.py  # DynamoDB CRUD, cursor pagination, resource factory (14 tests)
 └── integration/          # Full-flow integration tests
     ├── __init__.py
     └── test_books.py     # Login→create→get→unauthorized→not-found (1 test)
@@ -42,6 +42,7 @@ tests/
 - **async tests** via `asyncio.run()` — no pytest-asyncio
 - **Naming**: `test_<description>()` — descriptive function names
 - **Coverage gate**: 90% minimum (`make coverage`)
+- **No parametrize** — each test case is its own function
 
 ## FIXTURES (conftest.py)
 | Fixture | Purpose |
@@ -57,3 +58,4 @@ tests/
 - Never add `pytest-asyncio` — use `asyncio.run()` directly
 - Never redefine `client` fixture locally (inconsistency in `test_routes/test_auth.py`)
 - Integration tests still use moto — not real AWS DynamoDB
+- Service tests use their own `mock_aws()` fixture, not conftest's `dynamodb_table`

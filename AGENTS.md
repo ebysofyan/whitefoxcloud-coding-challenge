@@ -1,23 +1,24 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-05-16 17:36 UTC
-**Commit:** 1e82611
+**Generated:** 2026-05-17 12:00 UTC
+**Commit:** b9ab279
 **Branch:** main
 
 ## OVERVIEW
-FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev via `uv run fastapi dev`, prod via Serverless Framework → AWS Lambda (Mangum adapter).
+FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev via `uv run fastapi dev`, prod via Serverless Framework → AWS Lambda (Mangum adapter). SPA frontend served at root.
 
 ## STRUCTURE
 ```
 ├── src/                    # Application package (src-layout)
 │   ├── main.py            # FastAPI app + Mangum handler ← ENTRY POINT
-│   ├── config.py          # Pydantic Settings (env-based)
+│   ├── config.py          # Pydantic Settings + TableConfig (env-driven table naming)
 │   ├── models.py          # Pydantic v2 request/response schemas
 │   ├── exceptions.py      # Custom exception hierarchy
 │   ├── auth.py            # Token store + FastAPI dependency
+│   ├── aws.py             # DynamoDB resource factory
 │   ├── routes/            # FastAPI APIRouter modules
 │   └── services/          # Business logic + DynamoDB access
-├── tests/                  # Mirrors src/ structure, 55 tests, 100% coverage
+├── tests/                  # Mirrors src/ structure, 60 tests, 99% coverage
 ├── static/index.html       # SPA frontend (served at /)
 ├── scripts/init_db.py      # DynamoDB table bootstrap
 ├── serverless.yml          # AWS infra-as-code (Lambda + API Gateway + DynamoDB)
@@ -25,6 +26,7 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 ├── pyproject.toml          # Python deps + tool configs (uv, ruff, pytest)
 ├── requirements.txt        # Runtime deps (for Lambda bundle, kept in sync with pyproject.toml)
 ├── package.json            # Vestigial — only for serverless-python-requirements plugin
+├── .env.example            # Environment variable template
 └── Makefile                # Task runner (setup/test/lint/deploy/clean)
 ```
 
@@ -36,7 +38,7 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 | Add schema | `src/models.py` | Pydantic v2 BaseModel |
 | Add config | `src/config.py` | Pydantic BaseSettings, env vars |
 | Add test | Mirror path in `tests/` | Use moto for AWS, not unittest.mock |
-| Change deployment | `serverless.yml` | Lambda runtime, IAM, API Gateway |
+| Change deployment | `serverless.yml` | Lambda runtime, IAM, API Gateway, CORS |
 | Change lint rules | `pyproject.toml` [tool.ruff] | E, F, I, UP, B, SIM enabled |
 
 ## CODE MAP
@@ -46,9 +48,11 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 | `app` | FastAPI | `src/main.py:20` | App instance, CORS, routers, exception handlers |
 | `handler` | Mangum | `src/main.py:116` | Lambda entry point |
 | `Settings` | BaseSettings | `src/config.py` | ENVIRONMENT (auto-prefixes tables), DYNAMODB_ENDPOINT, AWS_REGION |
+| `TableConfig` | BaseModel | `src/config.py` | Table base names, env-driven prefixing |
 | `TokenStore` | class | `src/auth.py` | In-memory token store, hardcoded creds (admin/admin123) |
 | `get_current_user` | FastAPI Depends | `src/auth.py` | Auth dependency, extracts Bearer token |
 | `BookService` | class | `src/services/book_service.py` | DynamoDB CRUD, cursor pagination via base64 LEK |
+| `get_dynamodb_resource` | function | `src/aws.py` | Factory for DynamoDB resource with endpoint handling |
 | `BookNotFoundError` | Exception | `src/exceptions.py` | → 404 |
 | `NotAuthenticatedError` | Exception | `src/exceptions.py` | → 401 |
 | `InvalidCursorError` | Exception | `src/exceptions.py` | → 400 |
@@ -61,6 +65,7 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 - **moto** — AWS mocking via fixtures, never `unittest.mock`
 - **Service layer** — LRU-cached singleton in routes (`@lru_cache`)
 - **Cursor pagination** — base64-encoded DynamoDB LastEvaluatedKey
+- **Table naming** — `ENVIRONMENT` env var auto-prefixes: `{env}-books`, `{env}-users`
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - Never use `unittest.mock` / `MagicMock` for AWS — use `moto` via `dynamodb_table` fixture
@@ -74,6 +79,7 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 - Two static routes serve same file (`/` and `/static/index.html`) — intentional for both root and explicit access
 - `deps/` directory at root — Lambda dependency bundle, gitignored, created by `make deps`
 - Pre-commit hooks run ruff in 3 steps: lint --fix, import sort, format
+- CORS explicitly allows `Authorization` header for SPA auth
 
 ## COMMANDS
 ```bash
@@ -96,7 +102,8 @@ make clean        # rm -rf deps/ .serverless/ .pytest_cache/ .ruff_cache/ .cover
 - DynamoDB Local runs in-memory — data wiped on container restart
 - Default creds: admin / admin123 (coding challenge only)
 - CORS allow_origins=["*"] — intentional for challenge, restrict in production
-- Coverage gate: 90% minimum, currently at 100% (55 tests)
+- Coverage gate: 90% minimum, currently at 99% (60 tests)
 - No CI/CD pipeline — deployment is fully manual via `make deploy`
 - Serverless Framework v4, region ap-southeast-1 (Singapore)
 - Lambda layer bundles deps/ with PYTHONPATH=/var/task/deps, strips boto3/botocore (provided by runtime)
+- SPA at `static/index.html` requires CORS `Authorization` header for browser auth

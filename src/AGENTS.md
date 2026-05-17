@@ -14,11 +14,12 @@ src/
 ├── models.py             # Pydantic v2 request/response schemas (LoginRequest, BookCreate, BookResponse, pagination)
 ├── exceptions.py         # Custom exception hierarchy (BookNotFoundError, NotAuthenticatedError, InvalidCursorError)
 ├── auth.py               # TokenStore (in-memory), get_current_user FastAPI dependency
+├── aws.py                # DynamoDB resource factory (endpoint handling)
 ├── routes/               # APIRouter modules (see routes/AGENTS.md)
 │   ├── __init__.py
 │   ├── auth.py           # POST /api/auth/login
 │   └── books.py          # CRUD /api/books
-└── services/             # Business logic + DynamoDB access
+└── services/             # Business logic + DynamoDB access (see services/AGENTS.md)
     ├── __init__.py       # Empty package marker
     └── book_service.py   # BookService class, DynamoDB CRUD, cursor pagination
 ```
@@ -31,6 +32,7 @@ src/
 | Add exception | `exceptions.py` | Subclass BookAPIError, add handler in `main.py` |
 | Add schema | `models.py` | Pydantic v2 BaseModel |
 | Add config | `config.py` | Pydantic BaseSettings, add to Settings class |
+| Add DynamoDB factory | `aws.py` | Resource factory with endpoint handling |
 | Change Lambda handler | `main.py:handler` | Mangum(app) wraps FastAPI |
 
 ## CONVENTIONS
@@ -38,7 +40,8 @@ src/
 - **Exception hierarchy**: `BookAPIError` base → specific subclasses → HTTP status mapping in `main.py`
 - **Auth**: `get_current_user` FastAPI dependency, extracts Bearer token, validates against TokenStore
 - **Config**: Pydantic BaseSettings reads from env vars + `.env` file
+- **DynamoDB**: Use `get_dynamodb_resource()` factory, not direct `boto3.resource()`
 
 ## ANTI-PATTERNS
 - `auth.py` lives at src root (not in `auth/` subpackage) — acceptable for small project size
-- `__init__.py` in `services/` is empty — add docstring if extending
+- Never bypass `aws.py` factory — it handles endpoint URL logic for local vs cloud
