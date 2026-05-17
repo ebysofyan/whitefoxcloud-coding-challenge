@@ -36,12 +36,19 @@ jobs:
       - name: Build Lambda deps
         run: make deps
 
-      - name: Deploy
-        uses: serverless/github-action@v3.2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          args: deploy
+          node-version: "20"
+
+      - name: Install Serverless Framework
+        run: npm install -g serverless
+
+      - name: Deploy
+        run: serverless deploy
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ap-southeast-1
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
           ENVIRONMENT: dev
