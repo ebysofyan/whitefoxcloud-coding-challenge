@@ -57,12 +57,6 @@ echo "AWS_REGION=ap-southeast-1" > .env
 make db-init
 ```
 
-The table name defaults to `dev-books`. Override it with `BOOKS_TABLE_NAME`:
-
-```bash
-echo "BOOKS_TABLE_NAME=my-books" >> .env
-```
-
 ### 3. Start the dev server
 
 ```bash
@@ -74,9 +68,8 @@ make dev          # http://localhost:9876
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DYNAMODB_ENDPOINT` | *(unset — uses AWS)* | Set to `http://localhost:18749` for DynamoDB Local |
-| `BOOKS_TABLE_NAME` | `dev-books` | DynamoDB table name |
+| `ENVIRONMENT` | `dev` | Runtime environment — auto-prefixes table names (`{env}-books`) |
 | `AWS_REGION` | `ap-southeast-1` | AWS region for DynamoDB |
-| `ENVIRONMENT` | `dev` | Runtime environment label |
 
 ## Running Tests
 

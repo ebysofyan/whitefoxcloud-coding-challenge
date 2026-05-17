@@ -2,6 +2,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
+from src.aws import get_dynamodb_resource
 from src.config import settings
 from src.exceptions import BookNotFoundError, InvalidCursorError
 from src.models import BookCreate
@@ -82,9 +83,41 @@ def test_service_uses_dynamodb_endpoint(monkeypatch):
 
         return _Resource()
 
-    monkeypatch.setattr("src.services.book_service.boto3.resource", fake_resource)
+    monkeypatch.setattr("src.aws.boto3.resource", fake_resource)
     BookService()
     assert captured["endpoint_url"] == "http://localhost:9999"
+    assert captured["region_name"] == settings.aws_region
+
+
+def test_get_dynamodb_resource_uses_endpoint_when_set(monkeypatch):
+    """Factory passes endpoint_url when dynamodb_endpoint is configured."""
+    monkeypatch.setattr(settings, "dynamodb_endpoint", "http://localhost:9999")
+    captured: dict[str, object] = {}
+
+    def fake_resource(name, **kwargs):
+        captured["name"] = name
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr("src.aws.boto3.resource", fake_resource)
+    get_dynamodb_resource()
+    assert captured["endpoint_url"] == "http://localhost:9999"
+    assert captured["region_name"] == settings.aws_region
+
+
+def test_get_dynamodb_resource_omits_endpoint_when_not_set(monkeypatch):
+    """Factory omits endpoint_url when dynamodb_endpoint is not configured."""
+    monkeypatch.setattr(settings, "dynamodb_endpoint", None)
+    captured: dict[str, object] = {}
+
+    def fake_resource(name, **kwargs):
+        captured["name"] = name
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr("src.aws.boto3.resource", fake_resource)
+    get_dynamodb_resource()
+    assert "endpoint_url" not in captured
     assert captured["region_name"] == settings.aws_region
 
 

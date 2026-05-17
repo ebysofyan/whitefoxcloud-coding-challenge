@@ -10,7 +10,7 @@ FastAPI application package — entry point, config, schemas, auth, routes, serv
 src/
 ├── __init__.py           # Package marker
 ├── main.py               # FastAPI app, CORS, routers, exception handlers, Mangum handler
-├── config.py             # Pydantic Settings (DYNAMODB_ENDPOINT, BOOKS_TABLE_NAME, AWS_REGION, ENVIRONMENT)
+├── config.py             # Pydantic Settings (ENVIRONMENT auto-prefixes tables, DYNAMODB_ENDPOINT, AWS_REGION)
 ├── models.py             # Pydantic v2 request/response schemas (LoginRequest, BookCreate, BookResponse, pagination)
 ├── exceptions.py         # Custom exception hierarchy (BookNotFoundError, NotAuthenticatedError, InvalidCursorError)
 ├── auth.py               # TokenStore (in-memory), get_current_user FastAPI dependency

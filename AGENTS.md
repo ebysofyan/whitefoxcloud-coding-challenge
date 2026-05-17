@@ -45,7 +45,7 @@ FastAPI Python app for book CRUD, backed by DynamoDB. Dual runtime: local dev vi
 |--------|------|----------|------|
 | `app` | FastAPI | `src/main.py:20` | App instance, CORS, routers, exception handlers |
 | `handler` | Mangum | `src/main.py:116` | Lambda entry point |
-| `Settings` | BaseSettings | `src/config.py` | DYNAMODB_ENDPOINT, BOOKS_TABLE_NAME, AWS_REGION, ENVIRONMENT |
+| `Settings` | BaseSettings | `src/config.py` | ENVIRONMENT (auto-prefixes tables), DYNAMODB_ENDPOINT, AWS_REGION |
 | `TokenStore` | class | `src/auth.py` | In-memory token store, hardcoded creds (admin/admin123) |
 | `get_current_user` | FastAPI Depends | `src/auth.py` | Auth dependency, extracts Bearer token |
 | `BookService` | class | `src/services/book_service.py` | DynamoDB CRUD, cursor pagination via base64 LEK |

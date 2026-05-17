@@ -3,8 +3,7 @@ import json
 from typing import Any
 from uuid import uuid4
 
-import boto3
-
+from src.aws import get_dynamodb_resource
 from src.config import settings
 from src.exceptions import BookNotFoundError, InvalidCursorError
 from src.models import BookCreate, BookListResponse, BookResponse
@@ -33,11 +32,10 @@ def _decode_cursor(cursor: str | None) -> dict[str, Any] | None:
 
 
 class BookService:
-    def __init__(self):
-        kwargs: dict[str, Any] = {"region_name": settings.aws_region}
-        if settings.dynamodb_endpoint:
-            kwargs["endpoint_url"] = settings.dynamodb_endpoint
-        self.dynamodb = boto3.resource("dynamodb", **kwargs)
+    def __init__(self, dynamodb=None):
+        if dynamodb is None:
+            dynamodb = get_dynamodb_resource()
+        self.dynamodb = dynamodb
         self.table = self.dynamodb.Table(settings.books_table_name)
 
     def create_book(self, book: BookCreate) -> BookResponse:

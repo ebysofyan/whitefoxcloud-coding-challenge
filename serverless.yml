@@ -38,7 +38,7 @@ provider:
   region: ${opt:region, 'ap-southeast-1'}
   stage: ${opt:stage, 'dev'}
   environment:
-    BOOKS_TABLE_NAME: ${self:custom.tableName}
+    ENVIRONMENT: ${self:provider.stage}
     PYTHONPATH: /var/task/deps
 
   iam:
