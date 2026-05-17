@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse
 from mangum import Mangum
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -72,6 +73,21 @@ app.include_router(auth_router)
 app.include_router(books_router)
 
 STATIC_DIR = Path(__file__).parent.parent / "static"
+
+
+@app.get("/docs", response_class=HTMLResponse)
+async def docs(request: Request) -> HTMLResponse:
+    headers = dict(request.scope.get("headers", []))
+    host = headers.get(b"host", b"").decode()
+    if "execute-api" in host:
+        stage = os.getenv("ENVIRONMENT", "dev")
+        openapi_url = f"/{stage}/openapi.json"
+    else:
+        openapi_url = "/openapi.json"
+    return get_swagger_ui_html(
+        openapi_url=openapi_url,
+        title="Books API - Swagger UI",
+    )
 
 
 @app.get("/health", summary="Health check")
