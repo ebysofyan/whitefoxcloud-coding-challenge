@@ -67,22 +67,10 @@ jobs:
           API_URL=$(serverless info 2>&1 | grep 'execute-api' | head -1 | awk '{print $NF}' | sed 's|/{[^}]*}$||')
           if [ -z "$API_URL" ]; then
             echo "::error::Failed to extract API URL from serverless info"
-            serverless info 2>&1 | head -20
             exit 1
           fi
           echo "API_URL=$API_URL"
 
-          # Debug: check secrets are set
-          if [ -z "${{ secrets.API_TEST_USERNAME }}" ]; then
-            echo "::error::API_TEST_USERNAME secret is empty or not set"
-            exit 1
-          fi
-          if [ -z "${{ secrets.API_TEST_PASSWORD }}" ]; then
-            echo "::error::API_TEST_PASSWORD secret is empty or not set"
-            exit 1
-          fi
-
-          # Login
           LOGIN_HTTP_CODE=$(curl -s -o /tmp/login.json -w "%{http_code}" -X POST "${API_URL}/api/auth/login" \
             -H "Content-Type: application/json" \
             -d "{\"username\": \"${{ secrets.API_TEST_USERNAME }}\", \"password\": \"${{ secrets.API_TEST_PASSWORD }}\"}")
@@ -96,7 +84,6 @@ jobs:
 
           TOKEN=$(python3 -c "import json; print(json.load(open('/tmp/login.json'))['token'])")
 
-          # Verify authenticated endpoint
           BOOKS_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}/api/books" \
             -H "Authorization: Bearer $TOKEN")
           echo "Books HTTP: $BOOKS_HTTP_CODE"
