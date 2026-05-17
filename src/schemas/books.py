@@ -28,4 +28,3 @@ class BookListResponse(BaseModel):
     prev_cursor: str | None = None
     has_next: bool = False
     has_prev: bool = False
-    total: int = 0

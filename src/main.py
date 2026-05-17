@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request, status
@@ -20,7 +21,17 @@ from src.routes.books import router as books_router
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Books API", version="0.1.0")
+# Disable Swagger/OpenAPI in production environments
+_env = os.getenv("ENVIRONMENT", "dev")
+_is_prod = _env in ("prod", "staging")
+
+app = FastAPI(
+    title="Books API",
+    version="0.1.0",
+    docs_url=None if _is_prod else "/docs",
+    redoc_url=None if _is_prod else "/redoc",
+    openapi_url=None if _is_prod else "/openapi.json",
+)
 
 # CORS middleware (Spec §10)
 # NOTE: allow_origins=["*"] is intentional for this coding challenge.
