@@ -59,10 +59,27 @@ jobs:
 
       - name: Verify API health
         run: |
-          # Extract API Gateway URL from serverless state
+          # Get API URL from serverless state file
           API_URL=$(python3 -c "
-          import json, glob, os
-          for f in glob.glob('.serverless/cloudformation-template-update-stack-*.json'):
+          import json, os, glob
+
+          # Try serverless-state.json first
+          if os.path.exists('.serverless/serverless-state.json'):
+              state = json.load(open('.serverless/serverless-state.json'))
+              outputs = state.get('service', {}).get('outputs', {})
+              if 'endpoints' in outputs:
+                  endpoints = outputs['endpoints']
+                  if isinstance(endpoints, dict):
+                      for v in endpoints.values():
+                          if isinstance(v, str) and v.startswith('http'):
+                              print(v.rstrip('/'))
+                              exit()
+                  elif isinstance(endpoints, list) and endpoints:
+                      print(endpoints[0].rstrip('/'))
+                      exit()
+
+          # Fallback: CloudFormation template
+          for f in glob.glob('.serverless/cloudformation-template-*.json'):
               with open(f) as fh:
                   tmpl = json.load(fh)
                   outputs = tmpl.get('Outputs', [])
@@ -70,7 +87,8 @@ jobs:
                       if o['OutputKey'] == 'ServiceEndpoint':
                           print(o['OutputValue'].rstrip('/'))
                           exit()
-          print('ERROR: ServiceEndpoint not found', file=os.sys.stderr)
+
+          print('ERROR: endpoint not found', file=os.sys.stderr)
           os.sys.exit(1)
           ")
           echo "API_URL=$API_URL"
